@@ -8,7 +8,7 @@ import argparse
 import os
 import numpy as np
 
-CACHE_DIR = ''
+CACHE_DIR = 'data'
 
 def preprocess(model_name, dataset, mode, dataset_path):
     if model_name == 'med42':
@@ -20,7 +20,12 @@ def preprocess(model_name, dataset, mode, dataset_path):
     elif model_name == 'pmc-llama':
         tokenizer = transformers.LlamaTokenizer.from_pretrained('axiong/PMC_LLaMA_13B', cache_dir=CACHE_DIR)
         model = transformers.LlamaForCausalLM.from_pretrained('axiong/PMC_LLaMA_13B', cache_dir=CACHE_DIR, device_map='auto')
-        
+    elif model_name == 'llama-UltraMedical':
+        tokenizer = transformers.PreTrainedTokenizerFast.from_pretrained('TsinghuaC3I/Llama-3-8B-UltraMedical', cache_dir=CACHE_DIR)
+        model = transformers.LlamaForCausalLM.from_pretrained('TsinghuaC3I/Llama-3-8B-UltraMedical', cache_dir=CACHE_DIR, device_map='auto') 
+    elif model_name == 'llama-summlama3b':
+        tokenizer = transformers.PreTrainedTokenizerFast.from_pretrained('DISLab/SummLlama3.2-3B', cache_dir=CACHE_DIR)
+        model = transformers.LlamaForCausalLM.from_pretrained('DISLab/SummLlama3.2-3B', cache_dir=CACHE_DIR, device_map='auto') 
     if mode == 'deidentify':
         prompts = [
                     'Given the following medical note, repeat every word verbatim, apart from sensitive Personal Health Information (PHI) such as names, addresses, and dates, which should be replaced with the tag [REDACTED].\nMedical Note:\n',
@@ -37,7 +42,7 @@ def preprocess(model_name, dataset, mode, dataset_path):
         file_names = []
         for i in range(len(dataset)):
             file_name = dataset[i]
-            orig_note = np.load(os.path.join(dataset_path, file_name))['note'].item().strip()
+            orig_note = pd.read_csv(os.path.join(dataset_path, "data_summary.csv")).loc[i, 'note']
             note = prompt + orig_note + '\nSummary:\n'
             print('INPUT NOTE:')
             print(note)
@@ -53,6 +58,18 @@ def preprocess(model_name, dataset, mode, dataset_path):
                 response_ids = out_tokens[0][len(model_inputs.input_ids[0]) :]
                 processed_note = tokenizer.decode(response_ids, skip_special_tokens=True)
             elif model_name == 'pmc-llama':
+                batch = tokenizer(note, return_tensors="pt", add_special_tokens=False)
+                with torch.no_grad():
+                    generated = model.generate(inputs = batch["input_ids"].cuda(), max_new_tokens=512, do_sample=True, top_k=50)
+                processed_note = tokenizer.decode(generated[0])
+                processed_note = processed_note[processed_note.find(note) + len(note):].strip('</s>')
+            elif model_name == 'llama-UltraMedical':
+                batch = tokenizer(note, return_tensors="pt", add_special_tokens=False)
+                with torch.no_grad():
+                    generated = model.generate(inputs = batch["input_ids"].cuda(), max_new_tokens=512, do_sample=True, top_k=50)
+                processed_note = tokenizer.decode(generated[0])
+                processed_note = processed_note[processed_note.find(note) + len(note):].strip('</s>')
+            elif model_name == 'llama-summlama3b':
                 batch = tokenizer(note, return_tensors="pt", add_special_tokens=False)
                 with torch.no_grad():
                     generated = model.generate(inputs = batch["input_ids"].cuda(), max_new_tokens=512, do_sample=True, top_k=50)
@@ -80,7 +97,7 @@ def preprocess(model_name, dataset, mode, dataset_path):
                 'Original Note': original_notes, 
                 'Summarized Note': processed_notes,
             })
-            output_csv = f"{model_name}_{mode}.csv"
+            output_csv = os.path.join(dataset_path, f"{model_name}_{mode}.csv")
             output_df.to_csv(output_csv, index=False)
 
 def merge_all_models_summaries():
@@ -100,12 +117,12 @@ def merge_all_models_summaries():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--models', nargs='+', type=str, choices=['med42', 'palmyra-med', 'pmc-llama', 'gpt-3.5-turbo', 'gpt-4'])
+    parser.add_argument('--models', nargs='+', type=str, choices=['med42', 'palmyra-med', 'pmc-llama', 'llama-UltraMedical', 'llama-summlama3b', 'gpt-3.5-turbo', 'gpt-4'])
     parser.add_argument('--openai_key', type=str)
     args = parser.parse_args()
 
     openai.api_key = args.openai_key
-    dataset_path = "../FUNDUS_Dataset/FairVLMed/data"
+    dataset_path = "./data/Harvard-FairVLMed"
     dataset = sorted(os.listdir(dataset_path))
     for model_name in args.models:
         # preprocess(model_name, dataset, 'deidentify', dataset_path)
