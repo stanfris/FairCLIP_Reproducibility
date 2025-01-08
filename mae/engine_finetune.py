@@ -86,7 +86,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 outputs = model.module.head(blip_feats)
             elif args.model_type == 'clip':
                 if args.vl_feats_type == 'image':
-                    outputs = model.module.head(model.module.encode_image(samples))
+                    outputs = model.head(model.encode_image(samples))
+                    # outputs = model.module.head(model.module.encode_image(samples))
                 elif args.vl_feats_type == 'multimodal':
                     clip_text_input = torch.cat([clip.tokenize(truncate_note(tmp_note)) for tmp_note in batch['text_input']]).to(device)
                     concat_feats = torch.cat([model.module.encode_image(samples), model.module.encode_text(clip_text_input)], dim=1)
@@ -173,7 +174,8 @@ def evaluate(data_loader, model, device, args):
                 output = model.module.head(blip_feats)
             elif args.model_type == 'clip':
                 if args.vl_feats_type == 'image':
-                    output = model.module.head(model.module.encode_image(images))
+                    output = model.head(model.encode_image(images))
+                    # output = model.module.head(model.module.encode_image(images))
                 elif args.vl_feats_type == 'multimodal':
                     clip_text_input = torch.cat([clip.tokenize(truncate_note(tmp_note)) for tmp_note in batch['text_input']]).to(device)
                     concat_feats = torch.cat([model.module.encode_image(images), model.module.encode_text(clip_text_input)], dim=1)

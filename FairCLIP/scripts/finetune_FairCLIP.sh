@@ -1,5 +1,6 @@
 #!/bin/bash
-DATASET_DIR=/PATH-TO_DATASET/FairVLMed
+DATASET_DIR=../data/Harvard-FairVLMed
+# DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=.
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 NUM_EPOCH=10
@@ -13,7 +14,7 @@ BATCH_SIZE_FAIR=32
 
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP.csv
 
-python ./finetune_FairCLIP.py \
+python3 ./finetune_FairCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
 		--result_dir ${RESULT_DIR}/results/glaucoma_FairCLIP_${MODEL_ARCH}_${ATTRIBUTE_TYPE} \
 		--lr ${LR} \
@@ -23,4 +24,4 @@ python ./finetune_FairCLIP.py \
 		--attribute ${ATTRIBUTE_TYPE} \
 		--batchsize_fairloss ${BATCH_SIZE_FAIR} \
 		--lambda_fairloss ${LAMBDA} \
-		--summarized_note_file ${SUMMARIZED_NOTE_FILE} 
+		--summarized_note_file ${SUMMARIZED_NOTE_FILE}
