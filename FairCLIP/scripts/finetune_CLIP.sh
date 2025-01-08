@@ -1,5 +1,6 @@
 #!/bin/bash
-DATASET_DIR=/PATH-TO_DATASET/FairVLMed
+DATASET_DIR=../data/
+# DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=.
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 NUM_EPOCH=10
@@ -11,11 +12,11 @@ BATCH_SIZE=32
 
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}.csv
 
-python ./finetune_CLIP.py \
+python3 ./finetune_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
 		--result_dir ${RESULT_DIR}/results/glaucoma_CLIP_${MODEL_ARCH} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--summarized_note_file ${SUMMARIZED_NOTE_FILE} 
+		--summarized_note_file ${SUMMARIZED_NOTE_FILE}
