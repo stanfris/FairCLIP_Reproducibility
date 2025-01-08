@@ -63,7 +63,6 @@ dependencies:
   - zstd=1.4.9
   - pip:
       - absl-py==2.0.0
-      - accelerate==0.20.3
       - aiohttp==3.8.6
       - aiosignal==1.3.1
       - altair==5.1.2
