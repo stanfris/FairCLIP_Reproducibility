@@ -71,7 +71,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 outputs = model(samples)
             elif args.model_type == 'blip2':
                 if args.vl_feats_type == 'image':
-                    blip_feats = model.module.extract_features({"image": samples}, mode="image").image_embeds
+                    blip_feats = model.extract_features({"image": samples}, mode="image").image_embeds
                     if args.blip_feats_select == 'first':
                         blip_feats = blip_feats[:,0,:]
                     elif args.blip_feats_select == 'avgpool':
@@ -82,16 +82,16 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                         blip_feats = blip_feats.flatten(1)
                 elif args.vl_feats_type == 'multimodal':
                     assert args.blip_feats_select == 'avgpool'
-                    blip_feats = model.module.extract_features({"image": samples, "text_input": batch['text_input']}, mode="multimodal").multimodal_embeds.mean(dim=1)
-                outputs = model.module.head(blip_feats)
+                    blip_feats = model.extract_features({"image": samples, "text_input": batch['text_input']}, mode="multimodal").multimodal_embeds.mean(dim=1)
+                outputs = model.head(blip_feats)
             elif args.model_type == 'clip':
                 if args.vl_feats_type == 'image':
                     outputs = model.head(model.encode_image(samples))
                     # outputs = model.module.head(model.module.encode_image(samples))
                 elif args.vl_feats_type == 'multimodal':
                     clip_text_input = torch.cat([clip.tokenize(truncate_note(tmp_note)) for tmp_note in batch['text_input']]).to(device)
-                    concat_feats = torch.cat([model.module.encode_image(samples), model.module.encode_text(clip_text_input)], dim=1)
-                    outputs = model.module.head(concat_feats)
+                    concat_feats = torch.cat([model.encode_image(samples), model.encode_text(clip_text_input)], dim=1)
+                    outputs = model.head(concat_feats)
             loss = torch.nn.BCEWithLogitsLoss()(outputs[:,1], targets.type(torch.float32))
 
         loss_value = loss.item()
@@ -153,13 +153,13 @@ def evaluate(data_loader, model, device, args):
         attributes = batch['attributes']
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
-        
+
         with torch.cuda.amp.autocast():
             if args.model_type in ['vit', 'mae']:
                 output = model(images)
             elif args.model_type == 'blip2':
                 if args.vl_feats_type == 'image':
-                    blip_feats = model.module.extract_features({"image": images}, mode="image").image_embeds
+                    blip_feats = model.extract_features({"image": images}, mode="image").image_embeds
                     if args.blip_feats_select == 'first':
                         blip_feats = blip_feats[:,0,:]
                     elif args.blip_feats_select == 'avgpool':
@@ -170,16 +170,16 @@ def evaluate(data_loader, model, device, args):
                         blip_feats = blip_feats.flatten(1)
                 elif args.vl_feats_type == 'multimodal':
                     assert args.blip_feats_select == 'avgpool'
-                    blip_feats = model.module.extract_features({"image": images, "text_input": batch['text_input']}, mode="multimodal").multimodal_embeds.mean(dim=1)
-                output = model.module.head(blip_feats)
+                    blip_feats = model.extract_features({"image": images, "text_input": batch['text_input']}, mode="multimodal").multimodal_embeds.mean(dim=1)
+                output = model.head(blip_feats)
             elif args.model_type == 'clip':
                 if args.vl_feats_type == 'image':
                     output = model.head(model.encode_image(images))
                     # output = model.module.head(model.module.encode_image(images))
                 elif args.vl_feats_type == 'multimodal':
                     clip_text_input = torch.cat([clip.tokenize(truncate_note(tmp_note)) for tmp_note in batch['text_input']]).to(device)
-                    concat_feats = torch.cat([model.module.encode_image(images), model.module.encode_text(clip_text_input)], dim=1)
-                    output = model.module.head(concat_feats)
+                    concat_feats = torch.cat([model.encode_image(images), model.encode_text(clip_text_input)], dim=1)
+                    output = model.head(concat_feats)
             loss = torch.nn.BCEWithLogitsLoss()(output[:,1], target.type(torch.float32))
 
         all_probs.append(torch.sigmoid(output)[:,1].cpu().numpy())
@@ -191,7 +191,7 @@ def evaluate(data_loader, model, device, args):
     all_attrs = np.concatenate(all_attrs, axis=0)
 
     overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(all_probs, all_labels, all_attrs.T)
-    
+
     test_stats = {
         'overall_acc': overall_acc,
         'eval_es_acc': eval_es_acc,
