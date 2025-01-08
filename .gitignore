@@ -1,6 +1,6 @@
 checkpoints/
 data/
-
+.DS_Store
 # From their repo:
 
 FUNDUS_Dataset
