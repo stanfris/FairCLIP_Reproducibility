@@ -1,6 +1,11 @@
 checkpoints/
 data/
+FairCLIP/results/
+mae/output_dir/
+*.out
+mae/tmp/
 .DS_Store
+mae/tmp.out--blip_feats_select
 # From their repo:
 
 FUNDUS_Dataset
