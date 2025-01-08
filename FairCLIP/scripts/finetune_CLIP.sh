@@ -1,5 +1,5 @@
 #!/bin/bash
-DATASET_DIR=../data/
+DATASET_DIR=../data/Harvard-FairVLMed
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=.
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
