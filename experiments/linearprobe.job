@@ -21,7 +21,7 @@ pip install openai-clip
 OMP_NUM_THREADS=1 
 
 # directories
-DATA_DIR=/Path/to/FairVLMed
+DATA_DIR=../data/Harvard-FairVLMed
 PRETRAIN_CHKPT=/Path/to/CKPT
 EXP_NAME=tmp
 
@@ -32,7 +32,7 @@ MODEL_TYPE=clip # [clip, blip2]
 SUMMARY_TYPE=gpt-4
 BATCH_SIZE=512
 EPOCHS=1000
-BLR=0.1 # learning rate
+LR=0.1
 WDECAY=0.0
 
 # Run your code
@@ -47,7 +47,7 @@ srun python3 main_linprobe.py \
             --cls_token \
             --finetune ${PRETRAIN_CHKPT} \
             --epochs ${EPOCHS} \
-            --blr ${BLR} \
+            --blr ${LR} \
             --weight_decay ${WDECAY} \
             --data_path ${DATA_DIR} \
             --output_dir $EXP_NAME \
