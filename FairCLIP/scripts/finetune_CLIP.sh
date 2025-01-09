@@ -12,7 +12,7 @@ BATCH_SIZE=32
 
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}.csv
 
-python3 ./finetune_CLIP.py \
+python3 FairCLIP/finetune_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
 		--result_dir ${RESULT_DIR}/results/glaucoma_CLIP_${MODEL_ARCH} \
 		--lr ${LR} \
