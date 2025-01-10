@@ -54,25 +54,26 @@ parser.add_argument('--batchsize_fairloss', default=64, type=int)
 parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
 
-def loss_fairer_CLIP(group_dataloaders):
-    total_loss = 0
-    for x in group_dataloaders:
-        images_dist, texts_dist, _ = next(x)
-        images_dist = images_dist.to(device)
-        texts_dist = texts_dist.to(device)
-        with torch.no_grad():
-            img_feats, txt_feats = model(images_dist, texts_dist)
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model):
+    similarity = (logits_per_image @ logits_per_text.T)
+    correlations_with_batch = similarity.diag().float()
+    for group_dataloader in all_attribute_dataloaders:
+        total_loss = 0
+        for x in group_dataloader:
+            images_dist, texts_dist, _ = next(x)
+            images_dist = images_dist.to(device)
+            texts_dist = texts_dist.to(device)
+            with torch.no_grad():
+                img_feats, txt_feats = model(images_dist, texts_dist)
 
-        similarity = (img_feats @ txt_feats.T)
-        correlations_with_group = similarity.diag().float()
-        correlations_with_group /= correlations_with_group.sum()
+            similarity = (img_feats @ txt_feats.T)
+            correlations_with_group = similarity.diag().float()
+            correlations_with_group /= correlations_with_group.sum()
 
-        # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
-        # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
-        total_loss = total_loss + args.lambda_fairloss * \
-            loss_for_FairCLIP(
-                correlations_with_batch[:, None], correlations_with_group[:, None])
-    return total_loss
+            # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
+            # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
+            total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+        
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -153,8 +154,8 @@ if __name__ == '__main__':
     logger.log(
         f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
 
-    # get all different dataloaders for all groups:
-    all_group_dataloaders = []
+    # get all different dataloaders for all attributes:
+    all_attribute_dataloaders = []
     for attr in range(len(groups_in_attrs)):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
         group_dataloaders = []
@@ -165,7 +166,7 @@ if __name__ == '__main__':
             tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
                                         num_workers=args.workers, pin_memory=True, drop_last=False)
             group_dataloaders.append(endless_loader(tmp_dataloader))
-        all_group_dataloaders.append(group_dataloaders)
+        all_attribute_dataloaders.append(group_dataloaders)
 
     group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
         train_dataset)
@@ -239,14 +240,8 @@ if __name__ == '__main__':
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
 
-            similarity = (logits_per_image @ logits_per_text.T)
-            correlations_with_batch = similarity.diag().float()
-            correlations_groups = []
-
-            total_sinkhorn_loss = 0
-            for group_dataloader in all_group_dataloaders:
-                total_sinkhorn_loss += loss_fairer_CLIP(group_dataloader)
-            total_sinkhorn_loss /= 4
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model)
+            total_sinkhorn_loss /= len(groups_in_attrs)
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
             
