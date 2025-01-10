@@ -161,7 +161,20 @@ class fair_vl_med_dataset(torch.utils.data.Dataset):
         return slo_fundus, token, label_and_attributes
 
 class fair_vl_group_dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, attribute='race', thegroup=0):
+    """
+    This class is responsible for splitting the dataset based on an attribute and which group inside the attribute
+    """
+    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, attribute='race', thegroup=0, allgroups=False):
+        """
+        The initialization function
+        -   preprocess = 
+        -   files = 
+        -   subset =
+        -   text_source = 
+        -   summarized_note_file =
+        -   attribute = the attribute for which FairCLIP is trained on.
+        -   thegroup = which group of the attribute? For race: white (0), black (1), asian (2). For gender: male (0), female (1)
+        """
         self.preprocess = preprocess
         self.dataset_dir = os.path.join(dataset_dir, subset)
         self.subset = subset
@@ -173,7 +186,7 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
         if self.subset == 'Training' and self.text_source == 'note' and summarized_note_file != '':
             df = pd.read_csv(os.path.join(dataset_dir, summarized_note_file))
             
-            for index, row in df.iterrows():
+            for _, row in df.iterrows():
                 self.summarized_notes[row.iloc[0].strip()] = row.iloc[2].strip()
         
         # check if the split file exists
@@ -194,15 +207,16 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
             for file in self.files:
                 npz_path = os.path.join(self.dataset_dir, file)
                 data = np.load(npz_path)
+                # If all attributes are present, include them
                 if data['race'].item() != -1 and data['gender'].item() != -1 and data['ethnicity'].item() != -1 and data['language'].item() != -1:
                     tmp_files.append(file)
             self.files = tmp_files
 
         tmp_files = []
+        # This piece of code only takes into acc
         for file in self.files:
             npz_path = os.path.join(self.dataset_dir, file)
             data = np.load(npz_path)
-
             group = int(data[attribute].item())
             if group == thegroup:
                 tmp_files.append(file)
