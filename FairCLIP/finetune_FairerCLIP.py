@@ -55,6 +55,8 @@ parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
 
 def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model):
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
     for group_dataloader in all_attribute_dataloaders:
@@ -73,6 +75,8 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
             total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+        total_sinkhorn_loss += total_loss
+    return total_sinkhorn_loss
         
 
 if __name__ == '__main__':
