@@ -64,10 +64,12 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
+    total_groups = 0
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         if weightslist[attributeid] == 0:
             continue
         total_loss = 0
+        total_groups += 1
         for x in group_dataloader:
             images_dist, texts_dist, _ = next(x)
             images_dist = images_dist.to(device)
@@ -83,7 +85,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
             total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
         total_sinkhorn_loss += weightslist[attributeid]*total_loss
-    return total_sinkhorn_loss
+    return total_sinkhorn_loss/total_groups
         
 
 if __name__ == '__main__':
@@ -252,7 +254,6 @@ if __name__ == '__main__':
                           loss_txt(logits_per_text, ground_truth))/2
 
             total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
-            total_sinkhorn_loss /= len(groups_in_attrs)
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
             
