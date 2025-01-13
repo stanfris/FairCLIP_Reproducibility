@@ -65,6 +65,8 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
+        if weightslist[attributeid] == 0:
+            continue
         total_loss = 0
         for x in group_dataloader:
             images_dist, texts_dist, _ = next(x)
