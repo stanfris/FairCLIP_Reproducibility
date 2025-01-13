@@ -53,12 +53,18 @@ parser.add_argument('--attribute', default='race', type=str,
 parser.add_argument('--batchsize_fairloss', default=64, type=int)
 parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
+parser.add_argument(
+  "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
+  nargs="*",  # 0 or more values expected => creates a list
+  type=float,
+  default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
+)
 
-def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device):
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist):
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
-    for group_dataloader in all_attribute_dataloaders:
+    for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         total_loss = 0
         for x in group_dataloader:
             images_dist, texts_dist, _ = next(x)
@@ -74,7 +80,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
             total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
-        total_sinkhorn_loss += total_loss
+        total_sinkhorn_loss += weightslist[attributeid]*total_loss
     return total_sinkhorn_loss
         
 
@@ -93,10 +99,10 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
+    # Race, gender, etnicity, language
     groups_in_attrs = [3, 2, 2, 3]
     attr_to_idx = {'race': 0, 'gender': 1, 'ethnicity': 2, 'language': 3}
     idx_to_attr = {0: 'race', 1: 'gender', 2: 'ethnicity', 3: 'language'}
-    attr_weights = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
 
     model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
@@ -243,7 +249,7 @@ if __name__ == '__main__':
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
 
-            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device)
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
             total_sinkhorn_loss /= len(groups_in_attrs)
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
