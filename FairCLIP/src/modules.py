@@ -164,7 +164,7 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
     """
     This class is responsible for splitting the dataset based on an attribute and which group inside the attribute
     """
-    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, attribute='race', thegroup=0, allgroups=False):
+    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, attribute='race', thegroup=0, return_idx=False):
         """
         The initialization function
         -   preprocess = 
@@ -179,6 +179,7 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
         self.dataset_dir = os.path.join(dataset_dir, subset)
         self.subset = subset
         self.text_source = text_source
+        self.return_idx = return_idx
 
         self.summarized_notes = {}
         # summarized_note_file is a csv file that contains the summarized notes associated with npz files
@@ -193,13 +194,7 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
         if files is not None:
             self.files = files
         else:
-            # df = pd.read_csv(os.path.join(dataset_dir, 'split_files.csv'))
-            # self.files = df[df['file_type'] == subset]['filename'].tolist()
             self.files = find_all_files(self.dataset_dir, suffix='npz')
-
-        # df = pd.read_csv(os.path.join(dataset_dir, 'split_files.csv'))
-        # self.files = df[df['file_type'] == subset]['filename'].tolist()
-        # self.files = files
 
         # iterate through the files and remove the ones that has unknown attributes (-1)
         if subset != 'Training':
@@ -264,7 +259,8 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
         language = int(data['language'].item())
         # merge all labels together into a single tensor at size of 4
         label_and_attributes = torch.tensor([glaucoma_label, race, gender, hispanic, language])
-
+        if self.return_idx:
+            return slo_fundus, token, label_and_attributes, self.files[idx]
         return slo_fundus, token, label_and_attributes
 
 def endless_loader(dataloader):
