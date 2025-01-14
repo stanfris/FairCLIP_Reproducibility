@@ -60,53 +60,22 @@ parser.add_argument(
   default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
 )
 
-def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist, file_list):
-    """
-    Calculates the loss for the Fairer CLIP model.
-        - all_attribute_dataloaders: contains a list of group loaders for each attribute. Each group loader contains
-                                    all data elements of a single group (for example: Female is a dataloader inside the attribute Gender)
-        - loss: the function to calculate the loss
-        - logits_per_image: used to calculate the overall average centre of all data, to calculate the sinkhorn distance with.
-                            Comes from the standard training set batch.
-        - logits_per_text: used to calculate the overall average centre of all data, to calculate the sinkhorn distance with.
-                            Comes from the standard training set batch.
-        - model: the FairerCLIP model to run the data through
-        - device: the device on which the model is located
-        - weightslist: List containing the weights of each attribute. Should sum up to one.
-        - file_list: List containing all possible data files.
-
-    Optimization: Because all attributes have overlap in terms of datapoints, if a certain datapoint is already calculated, it is stored in
-            filename_to_result. Each index i corresponds to the (image features, text features) of file file_list[i].
-    """
-    loss_fairer_clip = 0
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist):
+    total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
     total_groups = 0
-    filename_to_result = [None] * len(file_list)
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         if weightslist[attributeid] == 0:
             continue
-        attribute_loss = 0
+        total_loss = 0
         total_groups += 1
         for x in group_dataloader:
-            images_dist, texts_dist, _, file_names = next(x)
-            img_feats = None
-            txt_feats = None
-            all_results = [filename_to_result[file_list.index(file_name)] for file_name in file_names]
-            if None in all_results:
-                # No previous output, thus run all
-                images_dist = images_dist.to(device)
-                texts_dist = texts_dist.to(device)
-                with torch.no_grad():
-                    img_feats, txt_feats = model(images_dist, texts_dist)
-                # For every None element present, set it to its new value
-                none_indices = [i for i, val in enumerate(all_results) if val is None]
-                for none_indice in none_indices:
-                    filename_to_result[none_indice] = (img_feats[none_indice], txt_feats[none_indice])
-            else:
-                # combine all elements to get image and text features.
-                img_feats, txt_feats = zip(*all_results)
-                
+            images_dist, texts_dist, _ = next(x)
+            images_dist = images_dist.to(device)
+            texts_dist = texts_dist.to(device)
+            with torch.no_grad():
+                img_feats, txt_feats = model(images_dist, texts_dist)
 
             similarity = (img_feats @ txt_feats.T)
             correlations_with_group = similarity.diag().float()
@@ -114,9 +83,9 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
 
             # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
-            attribute_loss = attribute_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
-        loss_fairer_clip += weightslist[attributeid]*attribute_loss
-    return loss_fairer_clip/total_groups
+            total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+        total_sinkhorn_loss += weightslist[attributeid]*total_loss
+    return total_sinkhorn_loss/total_groups
         
 
 if __name__ == '__main__':
@@ -199,9 +168,6 @@ if __name__ == '__main__':
         f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
 
     # get all different dataloaders for all attributes:
-    all_files = find_all_files(args.dataset_dir, suffix='npz')
-    print(f"files found in main: {all_files}")
-    print(f"directory used in main: {args.dataset_dir} aka aka {os.path.join(args.dataset_dir, os.listdir(args.dataset_dir)[0])}")
     all_attribute_dataloaders = []
     for attr in range(len(groups_in_attrs)):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
@@ -209,7 +175,7 @@ if __name__ == '__main__':
         for i in range(groups_in_attrs[attr]):
             tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
                                                 text_source='note', summarized_note_file=args.summarized_note_file,
-                                                attribute=idx_to_attr[attr], thegroup=i, return_idx=True)
+                                                attribute=idx_to_attr[attr], thegroup=i)
             tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
                                         num_workers=args.workers, pin_memory=True, drop_last=False)
             group_dataloaders.append(endless_loader(tmp_dataloader))
@@ -287,8 +253,7 @@ if __name__ == '__main__':
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
 
-            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP,
-                                                logits_per_image, logits_per_text, model, device, args.weightslist, all_files)
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
             
