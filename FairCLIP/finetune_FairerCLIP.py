@@ -200,7 +200,8 @@ if __name__ == '__main__':
 
     # get all different dataloaders for all attributes:
     all_files = find_all_files(args.dataset_dir, suffix='npz')
-    print(all_files)
+    print(f"files found in main: {all_files}")
+    print(f"directory used in main: {args.dataset_dir} aka aka {os.path.join(args.dataset_dir, os.listdir(args.dataset_dir)[0])}")
     all_attribute_dataloaders = []
     for attr in range(len(groups_in_attrs)):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
