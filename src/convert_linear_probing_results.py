@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Tuple
 
 import argparse
 import csv
-import numpy as np
 import pickle
 
 from pathlib import Path
@@ -35,13 +34,10 @@ from pathlib import Path
 # path
 
 def convert_data_to_csv(data: List[Tuple[str, Dict[str, Any]]], scale=100) -> List[str]:
-    csv_content = []
-    csv_header = "epoch, acc, esacc_attr0, esacc_attr1, esacc_attr2, esacc_attr3, auc, esauc_attr0, esauc_attr1, esauc_attr2, esauc_attr3, auc_attr0_group0, auc_attr0_group1, auc_attr0_group2, auc_attr1_group0, auc_attr1_group1, auc_attr2_group0, auc_attr2_group1, auc_attr3_group0, auc_attr3_group1, auc_attr3_group2,  dpd_attr0, dpd_attr1, dpd_attr2, dpd_attr3,  eod_attr0, eod_attr1, eod_attr2, eod_attr3,  std_group_disparity_attr0, max_group_disparity_attr0, std_group_disparity_attr1, max_group_disparity_attr1, std_group_disparity_attr2, max_group_disparity_attr2, std_group_disparity_attr3, max_group_disparity_attr3, path"
-    csv_header = [header.strip() for header in csv_header.split(", ")]
-    csv_content.append(csv_header)
+    csv_content = [['epoch', 'acc', 'esacc_attr0', 'esacc_attr1', 'esacc_attr2', 'esacc_attr3', 'auc', 'esauc_attr0', 'esauc_attr1', 'esauc_attr2', 'esauc_attr3', 'auc_attr0_group0', 'auc_attr0_group1', 'auc_attr0_group2', 'auc_attr1_group0', 'auc_attr1_group1', 'auc_attr2_group0', 'auc_attr2_group1', 'auc_attr3_group0', 'auc_attr3_group1', 'auc_attr3_group2', 'dpd_attr0', 'dpd_attr1', 'dpd_attr2', 'dpd_attr3', 'eod_attr0', 'eod_attr1', 'eod_attr2', 'eod_attr3', 'std_group_disparity_attr0', 'max_group_disparity_attr0', 'std_group_disparity_attr1', 'max_group_disparity_attr1', 'std_group_disparity_attr2', 'max_group_disparity_attr2', 'std_group_disparity_attr3', 'max_group_disparity_attr3', 'path']]
 
     for file_name, content in data:
-        epoch = np.nan
+        epoch = ""
         acc = content["overall_acc"]
 
         esacc_attr0 = content["eval_es_acc"][0]
@@ -95,7 +91,6 @@ def convert_data_to_csv(data: List[Tuple[str, Dict[str, Any]]], scale=100) -> Li
         path = file_name
 
         csv_line = [
-            epoch,
             acc,
             esacc_attr0, esacc_attr1, esacc_attr2, esacc_attr3,
             auc,
@@ -112,7 +107,7 @@ def convert_data_to_csv(data: List[Tuple[str, Dict[str, Any]]], scale=100) -> Li
             std_group_disparity_attr3, max_group_disparity_attr3,
         ]
         csv_line = [value * scale for value in csv_line]
-        csv_line.append(path)
+        csv_line = [epoch, *csv_line, path]
         csv_content.append(csv_line)
 
     return csv_content
