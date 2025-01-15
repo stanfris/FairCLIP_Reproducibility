@@ -17,13 +17,14 @@ module load Anaconda3/2023.07-2
 # Activate your environment
 source activate fairclip
 
-OMP_NUM_THREADS=1 
+OMP_NUM_THREADS=1
 
 # directories
 DATA_DIR=../data/Harvard-FairVLMed
-PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed1542_auc0.6424/clip_ep002.pth
+# PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed1542_auc0.6424/clip_ep002.pth
 PRETRAIN_CHKPT=ViT-L/14
-EXP_NAME=tmp_linprobe
+CHKPT_NAME=CLIP_1
+EXP_NAME=../results/linear_probing
 
 # hyperparameters
 CFG_PATH=../LAVIS/lavis/projects/blip2/train/pretrain_stage1.yaml
@@ -45,7 +46,8 @@ srun python3 main_linprobe.py \
             --batch_size ${BATCH_SIZE} \
             --model vit_large_patch16 \
             --cls_token \
-	    --finetune ${PRETRAIN_CHKPT} \
+	          --finetune ${PRETRAIN_CHKPT} \
+            --save_checkpoint_name ${CHKPT_NAME} \
             --epochs ${EPOCHS} \
             --blr ${LR} \
             --weight_decay ${WDECAY} \
