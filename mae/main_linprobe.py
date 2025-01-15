@@ -15,6 +15,7 @@ import json
 import numpy as np
 import os
 import time
+import pickle
 from pathlib import Path
 
 import torch
@@ -54,6 +55,8 @@ def get_args_parser():
     parser.add_argument('--epochs', default=90, type=int)
     parser.add_argument('--accum_iter', default=1, type=int,
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
+
+    parser.add_argument('--save_checkpoint_name', type=str, help='Name used for best checkpoint')
 
     # Model parameters
     parser.add_argument('--model', default='vit_large_patch16', type=str, metavar='MODEL',
@@ -361,6 +364,13 @@ def main(args):
     print("Best Epoch Test Stats:")
     for k, v in best_epoch_test_stats.items():
         print(f"{k}: {v}")
+
+    # save best epoch stats
+    output_dir = Path(args.output_dir)
+    out_file = output_dir / f"{args.save_checkpoint_name}.pickle"
+
+    with open(out_file, "wb") as f:
+        pickle.dump(best_epoch_test_stats, f)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
