@@ -195,8 +195,6 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
             self.files = files
         else:
             self.files = find_all_files(self.dataset_dir, suffix='npz')
-            print(f"files found in modules: {self.files}")
-            print(f"using folder: {self.dataset_dir} aka {os.path.join(self.dataset_dir, os.listdir(self.dataset_dir)[0])}")
 
         # iterate through the files and remove the ones that has unknown attributes (-1)
         if subset != 'Training':
@@ -218,7 +216,6 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
             if group == thegroup:
                 tmp_files.append(file)
         self.files = tmp_files
-        print(f"final files in modules: {self.files}")
 
     def __len__(self):
         return len(self.files)
