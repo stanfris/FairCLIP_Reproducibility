@@ -356,7 +356,7 @@ def main(args):
                 if args.output_dir:
                     misc.save_model_best(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch)
+                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=args.save_checkpoint_name)
 
             print(f"Max Val AUC: {max_val_auc}")
             print(best_epoch_test_stats)
