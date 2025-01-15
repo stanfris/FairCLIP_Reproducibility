@@ -315,7 +315,7 @@ def save_model_best(args, epoch, model, model_without_ddp, optimizer, loss_scale
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
 
-    if checkpoint_name is not None:
+    if checkpoint_name is None:
         checkpoint_name = 'best_checkpoint.pth'
 
     if loss_scaler is not None:
