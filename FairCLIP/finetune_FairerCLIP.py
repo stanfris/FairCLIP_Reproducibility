@@ -203,7 +203,8 @@ if __name__ == '__main__':
         model.float()
     else:
         # Actually this line is unnecessary since clip by default already on float16
-        clip.model.convert_weights(model)
+        # clip.model.convert_weights(model)
+        model.float()
 
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
@@ -262,9 +263,9 @@ if __name__ == '__main__':
             if device == "cpu":
                 optimizer.step()
             else:
-                convert_models_to_fp32(model)
+                # convert_models_to_fp32(model)
                 optimizer.step()
-                clip.model.convert_weights(model)
+                # clip.model.convert_weights(model)
             avg_loss += total_loss.item()
 
         avg_loss /= len(train_dataloader)
