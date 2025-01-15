@@ -345,7 +345,7 @@ def main(args):
             args=args
         )
 
-        if (epoch+1)%10 == 0:
+        if (epoch+1)%1 == 0:
             val_stats = evaluate(data_loader_val, model, device, args)
             test_stats = evaluate(data_loader_test, model, device, args)
             print(f"AUC of the network on the {len(dataset_val)} val images: {val_stats['overall_auc']}")

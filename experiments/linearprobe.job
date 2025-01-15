@@ -4,9 +4,9 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=linearprobeCLIP_base
+#SBATCH --job-name=linearprobeCLIP_base_test
 #SBATCH --ntasks=1
-#SBATCH --time=01:00:00
+#SBATCH --time=00:10:00
 #SBATCH --mem=32000M
 #SBATCH --output=linear_probe_test_base_%A.out
 
@@ -23,7 +23,7 @@ OMP_NUM_THREADS=1
 DATA_DIR=../data/Harvard-FairVLMed
 # PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed1542_auc0.6424/clip_ep002.pth
 PRETRAIN_CHKPT=ViT-L/14
-CHKPT_NAME=CLIP_1
+CHKPT_NAME=CLIP_TEST
 EXP_NAME=../results/linear_probing
 
 # hyperparameters
@@ -32,7 +32,7 @@ FEATS_TYPE=image # [image, multimodal]
 MODEL_TYPE=clip # [clip, blip2]
 SUMMARY_TYPE=gpt-4
 BATCH_SIZE=512
-EPOCHS=100
+EPOCHS=5
 LR=0.1
 WDECAY=0.0
 
