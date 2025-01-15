@@ -4,6 +4,7 @@ FairCLIP/results/
 mae/output_dir/
 *.out
 mae/tmp/
+results/
 .DS_Store
 mae/tmp.out--blip_feats_select
 # From their repo:
