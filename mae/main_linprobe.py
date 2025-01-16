@@ -278,7 +278,11 @@ def main(args):
     elif args.model_type == 'clip':
         model, _ = clip.load("ViT-L/14", device="cpu")
         if args.finetune != "ViT-L/14":
-            model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model_state_dict"])
+            # temporary fix, because checkpoints are saved differently
+            if args.save_checkpoint_name == "CLIP_seed1542":
+                model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model"])
+            else:
+                model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model_state_dict"])
         if args.vl_feats_type == 'image':
             model.head = torch.nn.Linear(768, args.nb_classes)
         elif args.vl_feats_type == 'multimodal':

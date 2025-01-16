@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=01:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=FairerCLIP_%A.out
+#SBATCH --output=FairerHighBatchSizeCLIP_%A.out
 
 module purge
 module load 2023
@@ -29,16 +29,16 @@ NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
-LR=1e-5
-BATCH_SIZE=32
-LAMBDA=1e-7
-BATCH_SIZE_FAIR=32
+LR=0.00001414213
+BATCH_SIZE=64
+LAMBDA=1e-5
+BATCH_SIZE_FAIR=64
 
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_FairerCLIP.csv
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/results/glaucoma_FairerCLIP_${MODEL_ARCH} \
+		--result_dir ${RESULT_DIR}/fairerCLIP/largebatchsize/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
