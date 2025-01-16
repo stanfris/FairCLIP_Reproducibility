@@ -4,11 +4,11 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=lp_CLIP_1
+#SBATCH --job-name=lp_ft_C2928
 #SBATCH --ntasks=1
 #SBATCH --time=01:00:00
 #SBATCH --mem=32000M
-#SBATCH --output=linear_probe_test_base_%A.out
+#SBATCH --output=lp_clip_ft_%A.out
 
 module purge
 module load 2023
@@ -21,9 +21,8 @@ OMP_NUM_THREADS=1
 
 # directories
 DATA_DIR=../data/Harvard-FairVLMed
-# PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed1542_auc0.6424/clip_ep002.pth
-PRETRAIN_CHKPT=ViT-L/14
-CHKPT_NAME=CLIP_1
+PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed2928_auc0.7024/clip_ep001.pth
+CHKPT_NAME=CLIP_FT_seed2928
 EXP_NAME=../results/linear_probing
 
 # hyperparameters
@@ -32,9 +31,10 @@ FEATS_TYPE=image # [image, multimodal]
 MODEL_TYPE=clip # [clip, blip2]
 SUMMARY_TYPE=gpt-4
 BATCH_SIZE=512
-EPOCHS=100
+EPOCHS=250
 LR=0.1
-WDECAY=0.0
+WDECAY=0.
+SEED=2928
 
 # Run your code
 cd ../mae
@@ -56,4 +56,5 @@ srun python3 main_linprobe.py \
             --log_dir ${EXP_NAME} \
             --nb_classes 2 \
             --blip_feats_select avgpool \
-            --cfg-path ${CFG_PATH}
+            --cfg-path ${CFG_PATH} \
+            --seed ${SEED}
