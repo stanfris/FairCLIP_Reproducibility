@@ -308,7 +308,7 @@ if __name__ == '__main__':
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': eval_avg_loss,
-            }, os.path.join(result_dir, f"clip_ep{epoch:03d}.pth"))
+            }, os.path.join(result_dir, f"clip.pth"))
 
         if result_dir is not None:
             np.savez(os.path.join(result_dir, f'pred_gt_ep{epoch:03d}.npz'),
