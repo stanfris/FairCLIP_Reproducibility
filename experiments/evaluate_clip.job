@@ -24,13 +24,13 @@ cd ../FairCLIP
 DATASET_DIR=../data/Harvard-FairVLMed
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results
-MODEL_ARCH=vit-l14  # Options: vit-b16 | vit-l14
+MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
 MODALITY_TYPE='slo_fundus'
 LR=1e-5
 BATCH_SIZE=32
 ATTRIBUTE_TYPE=language # Options: race | gender | ethnicity | language
 
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_CLIP_eval.csv
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_CLIP_eval.csv
 
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
@@ -38,7 +38,7 @@ python3 ./evaluate_CLIP.py \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}5968_seed5968_auc0.6741/clip.pth
+		--pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}313_seed313_auc0.6833/clip.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
@@ -46,7 +46,7 @@ python3 ./evaluate_CLIP.py \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}7409_seed7409_auc0.6728/clip.pth
+                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}4679_seed4679_auc0.7066/clip.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
@@ -54,4 +54,4 @@ python3 ./evaluate_CLIP.py \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}8418_seed8418_auc0.6754/clip.pth
+                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}489_seed489_auc0.7146/clip.pth
