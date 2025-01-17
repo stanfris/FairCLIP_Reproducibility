@@ -31,18 +31,18 @@ class fairface_dataset(torch.utils.data.Dataset):
         # check if the split file exists
         if subset=='Training':
             print('Loading training data')
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:200]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train))
             self.data = df
             for _, row in df.iterrows():
                 self.summarized_notes[row.iloc[0]] = "this person is " + row.age + " years old, and their race is: " + row.race
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:200]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val))
             self.data = df
             for _, row in df.iterrows():
                 self.summarized_notes[row.iloc[0]] = "this person is " + row.age + " years old, and their race is: " + row.race
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = sorted(os.listdir(self.dataset_dir))[:200]
+        self.files = sorted(os.listdir(self.dataset_dir))
 
     def __len__(self):
         return len(self.files)
@@ -58,10 +58,31 @@ class fairface_dataset(torch.utils.data.Dataset):
 
         # extract labels from df
         gender_label = int(row['gender'] == 'Male')
-        age_label = row['age']
-        race_label = row['race']
+        age_mapping = {
+            "0-2": 0,
+            "3-9": 1,
+            "10-19": 2,
+            "20-29": 3,
+            "30-39": 4,
+            "40-49": 5,
+            "50-59": 6,
+            "60-69": 7,
+            "more than 70": 8
+        }
+        race_mapping = {
+            "East Asian": 0,
+            "Indian": 1,
+            "Black": 2,
+            "White": 3,
+            "Middle Eastern": 4,
+            "Southeast Asian": 5,
+            "Latino_Hispanic": 6
+        }
+
+        age_label = int(age_mapping.get(row["age"]))
+        race_label = int(race_mapping.get(row["race"]))
         
-        label_and_attributes = torch.tensor([gender_label])
+        label_and_attributes = torch.tensor([gender_label, age_label, race_label])
 
         return slo_fundus, token, label_and_attributes
 
@@ -336,7 +357,7 @@ def equity_scaled_AUC(output, target, attrs, alpha=1., num_classes=2):
 
     return es_auc
 
-def evalute_perf_by_attr(preds, gts, attrs=None, num_classes=2):
+def evaluate_perf_by_attr(preds, gts, attrs=None, num_classes=2):
 
     esaccs_by_attrs = []
     esaucs_by_attrs = []
@@ -384,8 +405,7 @@ def evalute_perf_by_attr(preds, gts, attrs=None, num_classes=2):
     return esaccs_by_attrs, esaucs_by_attrs, aucs_by_attrs, dpds, eods
 
 
-def evalute_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
-
+def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
     esaccs_by_attrs = []
     esaucs_by_attrs = []
     aucs_by_attrs = []
@@ -419,13 +439,7 @@ def evalute_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
             dpd = demographic_parity_difference(gts,
                                         pred_labels,
                                         sensitive_features=attr)
-            dpr = demographic_parity_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
             eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eor = equalized_odds_ratio(gts,
                                         pred_labels,
                                         sensitive_features=attr)
         elif num_classes > 2:
@@ -438,60 +452,6 @@ def evalute_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
         eods.append(eod)
 
     return overall_acc, esaccs_by_attrs, overall_auc, esaucs_by_attrs, aucs_by_attrs, dpds, eods, between_group_disparity
-
-def evalute_comprehensive_perf_(preds, gts, attrs=None, num_classes=2):
-
-    esaccs_by_attrs = []
-    esaucs_by_attrs = []
-    aucs_by_attrs = []
-    dpds = []
-    dprs = []
-    eods = []
-    eors = []
-    between_group_disparity = []
-
-    overall_auc = compute_auc(preds, gts, num_classes=num_classes)
-
-    for i in range(attrs.shape[0]):
-        attr = attrs[i,:]
-
-        es_acc = equity_scaled_accuracy(preds, gts, attr)
-        esaccs_by_attrs.append(es_acc)
-        es_auc = equity_scaled_AUC(preds, gts, attr, num_classes=num_classes)
-        esaucs_by_attrs.append(es_auc)
-
-        aucs_by_group = []
-        elements = np.unique(attr).astype(int)
-        for e in elements:
-            aucs_by_group.append( compute_auc(preds[attr == e], gts[attr == e], num_classes=num_classes) )
-        aucs_by_attrs.append(aucs_by_group)
-        std_disparity, max_disparity = compute_between_group_disparity_half(aucs_by_group, overall_auc)
-        between_group_disparity.append([std_disparity, max_disparity])
-
-        pred_labels = (preds >= 0.5).astype(float)
-        if num_classes == 2:
-            dpd = demographic_parity_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            dpr = demographic_parity_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eor = equalized_odds_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-        elif num_classes > 2:
-            dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
-            eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
-
-        dpds.append(dpd)
-        eods.append(eod)
-
-    return esaccs_by_attrs, esaucs_by_attrs, aucs_by_attrs, dpds, eods, between_group_disparity
 
 def compute_between_group_disparity(auc_list, overall_auc):
     return np.std(auc_list) / overall_auc, (np.max(auc_list)-np.min(auc_list)) / overall_auc

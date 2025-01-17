@@ -64,7 +64,7 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
-    groups_in_attrs = [3, 2, 2, 3]
+    groups_in_attrs = [9, 7]
 
     model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
@@ -229,9 +229,9 @@ if __name__ == '__main__':
 
         logger.log(
             f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
-
-        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(
+        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
             all_probs, all_labels, all_attrs.T)
+
 
         if best_auc <= overall_auc:
             best_auc = overall_auc
