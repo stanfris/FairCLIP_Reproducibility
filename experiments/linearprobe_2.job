@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=lp_C2928
+#SBATCH --job-name=lp_C2859
 #SBATCH --ntasks=1
 #SBATCH --time=04:30:00
 #SBATCH --mem=32000M
@@ -22,7 +22,7 @@ OMP_NUM_THREADS=1
 # directories
 DATA_DIR=../data/Harvard-FairVLMed
 PRETRAIN_CHKPT=ViT-L/14
-CHKPT_NAME=CLIP_seed2928
+CHKPT_NAME=CLIP_seed2859
 EXP_NAME=../results/linear_probing
 
 # hyperparameters
@@ -34,7 +34,7 @@ BATCH_SIZE=512
 EPOCHS=500
 LR=0.1
 WDECAY=0.
-SEED=2928
+SEED=2859
 
 # Run your code
 cd ../mae

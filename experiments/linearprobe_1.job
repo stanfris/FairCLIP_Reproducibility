@@ -4,9 +4,9 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=lp_C1542
+#SBATCH --job-name=lp_C2795
 #SBATCH --ntasks=1
-#SBATCH --time=02:30:00
+#SBATCH --time=04:30:00
 #SBATCH --mem=32000M
 #SBATCH --output=lp_clip_%A.out
 
@@ -21,8 +21,7 @@ OMP_NUM_THREADS=1
 
 # directories
 DATA_DIR=../data/Harvard-FairVLMed
-# PRETRAIN_CHKPT=ViT-L/14
-PRETRAIN_CHKPT=../results/linear_probing/CLIP_seed1542.pth
+PRETRAIN_CHKPT=ViT-L/14
 CHKPT_NAME=CLIP_seed1542
 EXP_NAME=../results/linear_probing
 
@@ -32,10 +31,10 @@ FEATS_TYPE=image # [image, multimodal]
 MODEL_TYPE=clip # [clip, blip2]
 SUMMARY_TYPE=gpt-4
 BATCH_SIZE=512
-EPOCHS=250
+EPOCHS=500
 LR=0.1
 WDECAY=0.
-SEED=1542
+SEED=2795
 
 # Run your code
 cd ../mae

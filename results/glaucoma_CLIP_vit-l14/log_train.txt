@@ -1,1 +1,0 @@
-Logging to ./results/glaucoma_CLIP_vit-l14
