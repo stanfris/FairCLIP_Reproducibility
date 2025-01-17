@@ -30,28 +30,28 @@ LR=1e-5
 BATCH_SIZE=32
 ATTRIBUTE_TYPE=language # Options: race | gender | ethnicity | language
 
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_eval.csv
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_CLIP_eval.csv
 
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/ \
+		--result_dir ${RESULT_DIR}/CLIP_finetuning/ \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/glaucoma_FairCLIP_${MODEL_ARCH}_32510_seed510_auc0.6924/clip.pth
+		--pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}5968_seed5968_auc0.6741/clip.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/ \
+                --result_dir ${RESULT_DIR}/CLIP_finetuning/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/glaucoma_FairCLIP_${MODEL_ARCH}_327601_seed7601_auc0.6550/clip.pth
+                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}7409_seed7409_auc0.6728/clip.pth
+
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/ \
+                --result_dir ${RESULT_DIR}/CLIP_finetuning/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/fairCLIP/${ATTRIBUTE_TYPE}/glaucoma_FairCLIP_${MODEL_ARCH}_328021_seed8021_auc0.7127/clip.pth
-
+                --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}8418_seed8418_auc0.6754/clip.pth
