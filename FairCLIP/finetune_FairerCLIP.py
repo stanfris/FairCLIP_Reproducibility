@@ -53,7 +53,40 @@ parser.add_argument('--attribute', default='race', type=str,
 parser.add_argument('--batchsize_fairloss', default=64, type=int)
 parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
+parser.add_argument(
+  "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
+  nargs="*",  # 0 or more values expected => creates a list
+  type=float,
+  default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
+)
 
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist):
+    total_sinkhorn_loss = 0
+    similarity = (logits_per_image @ logits_per_text.T)
+    correlations_with_batch = similarity.diag().float()
+    total_groups = 0
+    for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
+        if weightslist[attributeid] == 0:
+            continue
+        total_loss = 0
+        total_groups += 1
+        for x in group_dataloader:
+            images_dist, texts_dist, _ = next(x)
+            images_dist = images_dist.to(device)
+            texts_dist = texts_dist.to(device)
+            with torch.no_grad():
+                img_feats, txt_feats = model(images_dist, texts_dist)
+
+            similarity = (img_feats @ txt_feats.T)
+            correlations_with_group = similarity.diag().float()
+            correlations_with_group /= correlations_with_group.sum()
+
+            # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
+            # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
+            total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+        total_sinkhorn_loss += weightslist[attributeid]*total_loss
+    return total_sinkhorn_loss/total_groups
+        
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -72,8 +105,10 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
+    # Race, gender, etnicity, language
     groups_in_attrs = [3, 2, 2, 3]
     attr_to_idx = {'race': 0, 'gender': 1, 'ethnicity': 2, 'language': 3}
+    idx_to_attr = {0: 'race', 1: 'gender', 2: 'ethnicity', 3: 'language'}
 
     model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
@@ -134,14 +169,19 @@ if __name__ == '__main__':
     logger.log(
         f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
 
-    group_dataloaders = []
-    for i in range(groups_in_attrs[attr_to_idx[args.attribute]]):
-        tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
-                                            text_source='note', summarized_note_file=args.summarized_note_file,
-                                            attribute=args.attribute, thegroup=i)
-        tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
-                                    num_workers=args.workers, pin_memory=True, drop_last=False)
-        group_dataloaders.append(endless_loader(tmp_dataloader))
+    # get all different dataloaders for all attributes:
+    all_attribute_dataloaders = []
+    for attr in range(len(groups_in_attrs)):
+        # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
+        group_dataloaders = []
+        for i in range(groups_in_attrs[attr]):
+            tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
+                                                text_source='note', summarized_note_file=args.summarized_note_file,
+                                                attribute=idx_to_attr[attr], thegroup=i)
+            tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
+                                        num_workers=args.workers, pin_memory=True, drop_last=False)
+            group_dataloaders.append(endless_loader(tmp_dataloader))
+        all_attribute_dataloaders.append(group_dataloaders)
 
     group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
         train_dataset)
@@ -165,7 +205,8 @@ if __name__ == '__main__':
         model.float()
     else:
         # Actually this line is unnecessary since clip by default already on float16
-        clip.model.convert_weights(model)
+        # clip.model.convert_weights(model)
+        model.float()
 
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
@@ -176,6 +217,7 @@ if __name__ == '__main__':
 
     loss_for_FairCLIP = SamplesLoss(
         loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
+    
 
     # CHANGE: turned this on to include pretrained weights
     if args.pretrained_weights != "":
@@ -214,37 +256,23 @@ if __name__ == '__main__':
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
 
-            similarity = (logits_per_image @ logits_per_text.T)
-            correlations_with_batch = similarity.diag().float()
-            correlations_groups = []
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
 
-            for x in group_dataloaders:
-                images_dist, texts_dist, label_and_attributes_dist = next(x)
-                images_dist = images_dist.to(device)
-                texts_dist = texts_dist.to(device)
-                with torch.no_grad():
-                    img_feats, txt_feats = model(images_dist, texts_dist)
-
-                similarity = (img_feats @ txt_feats.T)
-                correlations_with_group = similarity.diag().float()
-                correlations_with_group /= correlations_with_group.sum()
-
-                total_loss = total_loss + args.lambda_fairloss * \
-                    loss_for_FairCLIP(
-                        correlations_with_batch[:, None], correlations_with_group[:, None])
+            total_loss += args.lambda_fairloss * total_sinkhorn_loss
+            
 
             total_loss.backward()
             if device == "cpu":
                 optimizer.step()
             else:
-                convert_models_to_fp32(model)
+                # convert_models_to_fp32(model)
                 optimizer.step()
-                clip.model.convert_weights(model)
+                # clip.model.convert_weights(model)
             avg_loss += total_loss.item()
 
         avg_loss /= len(train_dataloader)
 
-        # iterate over **validation** dataset
+        # iterate over test dataset
         eval_avg_loss = 0
         all_probs = []
         all_labels = []
@@ -308,7 +336,7 @@ if __name__ == '__main__':
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': eval_avg_loss,
-            }, os.path.join(result_dir, f"clip.pth"))
+            }, os.path.join(result_dir, "best_model.pth"))
 
         if result_dir is not None:
             np.savez(os.path.join(result_dir, f'pred_gt_ep{epoch:03d}.npz'),

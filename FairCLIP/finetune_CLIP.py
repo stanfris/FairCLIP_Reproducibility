@@ -58,9 +58,11 @@ if __name__ == '__main__':
 
     logger.log(f'===> random seed: {args.seed}')
 
-    logger.configure(dir=args.result_dir, log_suffix='train')
+    result_dir = args.result_dir + f"{args.seed}"
 
-    with open(os.path.join(args.result_dir, f'args_train.txt'), 'w') as f:
+    logger.configure(dir=result_dir, log_suffix='train')
+
+    with open(os.path.join(result_dir, f'args_train.txt'), 'w') as f:
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
@@ -70,7 +72,7 @@ if __name__ == '__main__':
 
     # Keeps track of best performance during finetuning
     best_global_perf_file = os.path.join(
-        os.path.dirname(args.result_dir), f'best_{args.perf_file}')
+        os.path.dirname(result_dir), f'best_{args.perf_file}')
     acc_head_str = ''
     auc_head_str = ''
     dpd_head_str = ''
@@ -205,12 +207,12 @@ if __name__ == '__main__':
 
         avg_loss /= len(train_dataloader)
 
-        # iterate over test dataset
+        # iterate over **validation** dataset
         eval_avg_loss = 0
         all_probs = []
         all_labels = []
         all_attrs = []
-        for batch in test_dataloader:
+        for batch in val_dataloader:
             images, texts, label_and_attributes = batch
 
             images = images.to(device)
@@ -269,10 +271,10 @@ if __name__ == '__main__':
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': eval_avg_loss,
-            }, os.path.join(args.result_dir, f"clip_ep{epoch:03d}.pth"))
+            }, os.path.join(result_dir, f"clip.pth"))
 
-        if args.result_dir is not None:
-            np.savez(os.path.join(args.result_dir, f'pred_gt_ep{epoch:03d}.npz'),
+        if result_dir is not None:
+            np.savez(os.path.join(result_dir, f'pred_gt_ep{epoch:03d}.npz'),
                      val_pred=all_probs, val_gt=all_labels, val_attr=all_attrs)
 
         logger.log(f'---- best AUC {best_auc:.4f} at epoch {best_ep}')
@@ -333,8 +335,8 @@ if __name__ == '__main__':
                 eod_head_str = ', '.join(
                     [f'{x:.4f}' for x in best_eod_groups]) + ', '
 
-                path_str = f'{args.result_dir}_seed{args.seed}_auc{best_auc:.4f}'
+                path_str = f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}'
                 f.write(f'{best_ep}, {best_acc:.4f}, {esacc_head_str} {best_auc:.4f}, {esauc_head_str} {auc_head_str} {dpd_head_str} {eod_head_str} {group_disparity_str} {path_str}\n')
 
-    os.rename(args.result_dir,
-              f'{args.result_dir}_seed{args.seed}_auc{best_auc:.4f}')
+    os.rename(result_dir,
+              f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}')

@@ -311,11 +311,15 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
         client_state = {'epoch': epoch}
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % epoch_name, client_state=client_state)
 
-def save_model_best(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
+def save_model_best(args, epoch, model, model_without_ddp, optimizer, loss_scaler, checkpoint_name=None):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
+
+    if checkpoint_name is None:
+        checkpoint_name = 'best_checkpoint.pth'
+
     if loss_scaler is not None:
-        checkpoint_paths = [output_dir / 'best_checkpoint.pth']
+        checkpoint_paths = [output_dir / checkpoint_name]
         for checkpoint_path in checkpoint_paths:
             to_save = {
                 'model': model_without_ddp.state_dict(),
