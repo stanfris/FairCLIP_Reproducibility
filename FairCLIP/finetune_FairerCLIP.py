@@ -53,6 +53,7 @@ parser.add_argument('--attribute', default='race', type=str,
 parser.add_argument('--batchsize_fairloss', default=64, type=int)
 parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
+parser.add_argument('--accum_iter', default=1, type=int)
 parser.add_argument(
   "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
   nargs="*",  # 0 or more values expected => creates a list
@@ -240,7 +241,7 @@ if __name__ == '__main__':
 
     for epoch in range(args.num_epochs):
         avg_loss = 0
-        for batch in train_dataloader:
+        for batch_idx, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
 
             images, texts, label_and_attributes = batch
@@ -259,16 +260,17 @@ if __name__ == '__main__':
             total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
-            
+
+            total_loss /= args.accum_iter
 
             total_loss.backward()
-            if device == "cpu":
-                optimizer.step()
-            else:
-                # convert_models_to_fp32(model)
-                optimizer.step()
-                # clip.model.convert_weights(model)
+
             avg_loss += total_loss.item()
+            
+            if ((batch_idx + 1) % args.accum_iter == 0) or (batch_idx + 1 == len(train_dataloader)):
+                optimizer.step()
+                optimizer.zero_grad()
+
 
         avg_loss /= len(train_dataloader)
 
