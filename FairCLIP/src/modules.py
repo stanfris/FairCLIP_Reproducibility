@@ -81,7 +81,6 @@ def count_number_of_groups(input_dataset):
 
 class fair_vl_med_dataset(torch.utils.data.Dataset):
     def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, ruleout_unknown=False):
-        self.preprocess = preprocess
         self.dataset_dir = os.path.join(dataset_dir, subset)
         self.subset = subset
         self.text_source = text_source
