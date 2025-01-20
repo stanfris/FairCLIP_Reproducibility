@@ -52,13 +52,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = natsorted(os.listdir(self.dataset_dir))[:100]
+        self.files = natsorted(os.listdir(self.dataset_dir))[:1000]
 
         self.summarized_notes = {}
 
         # check if the split file exists
         if subset=='Training':
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train))[:100]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train))[:1000]
             self.data = df
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
 
@@ -74,7 +74,7 @@ class fairface_dataset(torch.utils.data.Dataset):
                 self.files = tmp_files
         else:
             print("Loading validation")
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:100]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:1000]
             self.data = df
             if group_loader:
                 tmp_files = []
@@ -100,8 +100,6 @@ class fairface_dataset(torch.utils.data.Dataset):
         final_image = self.preprocess(img)
         row = self.data.loc[idx].to_dict()
         gender_label = int(row['gender'] == 'Male')
-        pos_note = 'A Manly Male man boy bloke guy'
-        neg_note = 'A feminine female woman girl gal'
         if self.subset == 'Training':
             note = "Image of a person that is " + row['age']+ " years old, and their race is: " + row['race'] + "They are " + row['gender']
             token = clip.tokenize(note)

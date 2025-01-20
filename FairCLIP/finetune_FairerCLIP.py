@@ -65,6 +65,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
+    correlations_with_batch /= correlations_with_batch.sum()
     total_groups = 0
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         if weightslist[attributeid] == 0:

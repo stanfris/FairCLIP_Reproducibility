@@ -216,6 +216,7 @@ if __name__ == '__main__':
 
             similarity = (logits_per_image @ logits_per_text.T)
             correlations_with_batch = similarity.diag().float()
+            correlations_with_batch /= correlations_with_batch.sum()
             correlations_groups = []
 
             for x in group_dataloaders:

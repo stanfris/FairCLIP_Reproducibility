@@ -66,17 +66,10 @@ if __name__ == '__main__':
             # concatentate class_text_feats along the second dimension
             class_text_feats = torch.cat(class_text_feats, dim=1)
 
-        all_logits = []
-        for i in range(class_text_feats.shape[1]):
-            similarity = (image_features @ class_text_feats[:, i, :].T)
-            # extract the diagonal of the matrix
-            logits = similarity.diag()
-            all_logits.append(logits)
+        vl_prob, vl_logits = compute_vl_prob(
+            image_features, class_text_feats)
 
-        all_logits = torch.stack(all_logits, dim=1)
-        predictions = torch.argmax(all_logits, dim=1)
-        print(predictions)
-        break
+        predictions = torch.argmax(vl_logits, dim=1)
         # Calculate accuracy
         accuracy = (predictions == combined_labels).float().mean().item()
         accuracies.append(accuracy)

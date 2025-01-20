@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description='FairCLIP Training/Fine-Tuning')
 parser.add_argument('--seed', default=-1, type=int,
                     help='seed for initializing training. ')
 parser.add_argument('--num_epochs', default=10, type=int)
-parser.add_argument('--lr', '--learning-rate', default=0.05, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.000001, type=float,
                     metavar='LR', help='initial learning rate', dest='lr')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
@@ -37,7 +37,7 @@ parser.add_argument('--wd', '--weight-decay', default=6e-5, type=float,
 
 parser.add_argument('--result_dir', default='./results', type=str)
 parser.add_argument('--dataset_dir', default='../data/fairface/', type=str)
-parser.add_argument('--batch_size', default=32, type=int)
+parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--workers', default=4, type=int)
 parser.add_argument('--eval_set', default='test',
                     type=str, help='options: val | test')
@@ -45,7 +45,7 @@ parser.add_argument('--summarized_note_file', default='', type=str)
 parser.add_argument('--text_source', default='note',
                     type=str, help='options: note | label')
 parser.add_argument('--perf_file', default='', type=str)
-parser.add_argument('--model_arch', default='vit-b16',
+parser.add_argument('--model_arch', default='RN50',
                     type=str, help='options: vit-b16 | vit-l14')
 parser.add_argument('--pretrained_weights', default='', type=str)
 parser.add_argument('--attribute', default='race', type=str,
@@ -65,6 +65,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
+    correlations_with_batch /= correlations_with_batch.sum()
     total_groups = 0
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         if weightslist[attributeid] == 0:
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     groups_in_attrs = [9, 7]
     idx_to_attr = {0: 'age', 1: 'race'}
 
-    model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
+    model_arch_mapping = {'RN50':'RN50', 'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
     best_global_perf_file = os.path.join(
         os.path.dirname(result_dir), f'best_{args.perf_file}')
@@ -262,8 +263,8 @@ if __name__ == '__main__':
             images, texts, label_and_attributes = batch
 
             images = images.to(device)
-            texts = texts.unsqueeze(2).to(device)
-            glaucoma_labels = label_and_attributes[:, 0].to(device)
+            texts = texts.to(device)
+            combined_labels = label_and_attributes[:, 0].to(device)
             attributes = label_and_attributes[:, 1:].to(device)
 
             class_text_feats = []
@@ -282,12 +283,20 @@ if __name__ == '__main__':
                 image_features, class_text_feats)
 
             all_probs.append(vl_prob[:, 1].cpu().numpy())
-            all_labels.append(glaucoma_labels.cpu().numpy())
+            all_labels.append(combined_labels.cpu().numpy())
+            all_attrs.append(attributes.cpu().numpy())
+            # apply binary cross entropy loss
+            loss = F.binary_cross_entropy(
+                vl_prob[:, 1].float(), combined_labels.float())
+            eval_avg_loss += loss.item()
+
+            all_probs.append(vl_prob[:, 1].cpu().numpy())
+            all_labels.append(combined_labels.cpu().numpy())
             all_attrs.append(attributes.cpu().numpy())
 
             # apply binary cross entropy loss
             loss = F.binary_cross_entropy(
-                vl_prob[:, 1].float(), glaucoma_labels.float())
+                vl_prob[:, 1].float(), combined_labels.float())
             eval_avg_loss += loss.item()
 
         all_probs = np.concatenate(all_probs, axis=0)
