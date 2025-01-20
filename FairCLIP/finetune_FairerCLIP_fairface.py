@@ -1,5 +1,5 @@
 from src import logger
-from src.modules import *
+from src.modules_new_data import *
 import os
 import numpy as np
 import random
@@ -8,6 +8,7 @@ import time
 import json
 import pandas as pd
 from collections import Counter
+from geomloss import SamplesLoss
 
 import clip
 
@@ -21,7 +22,7 @@ import sys
 sys.path.append('.')
 
 
-parser = argparse.ArgumentParser(description='CLIP Training/Fine-Tuning')
+parser = argparse.ArgumentParser(description='FairCLIP Training/Fine-Tuning')
 
 parser.add_argument('--seed', default=-1, type=int,
                     help='seed for initializing training. ')
@@ -35,7 +36,7 @@ parser.add_argument('--wd', '--weight-decay', default=6e-5, type=float,
                     dest='weight_decay')
 
 parser.add_argument('--result_dir', default='./results', type=str)
-parser.add_argument('--dataset_dir', default='./data', type=str)
+parser.add_argument('--dataset_dir', default='../data/fairface/', type=str)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--workers', default=4, type=int)
 parser.add_argument('--eval_set', default='test',
@@ -47,7 +48,46 @@ parser.add_argument('--perf_file', default='', type=str)
 parser.add_argument('--model_arch', default='vit-b16',
                     type=str, help='options: vit-b16 | vit-l14')
 parser.add_argument('--pretrained_weights', default='', type=str)
+parser.add_argument('--attribute', default='race', type=str,
+                    help='race|gender|ethnicity|language')
+parser.add_argument('--batchsize_fairloss', default=64, type=int)
+parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
+parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
+parser.add_argument('--accum_iter', default=1, type=int)
+parser.add_argument(
+  "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
+  nargs="*",  # 0 or more values expected => creates a list
+  type=float,
+  default=[0.5, 0.5],  # default if nothing is provided
+)
 
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist):
+    total_sinkhorn_loss = 0
+    similarity = (logits_per_image @ logits_per_text.T)
+    correlations_with_batch = similarity.diag().float()
+    total_groups = 0
+    for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
+        if weightslist[attributeid] == 0:
+            continue
+        total_loss = 0
+        total_groups += 1
+        for x in group_dataloader:
+            images_dist, texts_dist, _ = next(x)
+            images_dist = images_dist.to(device)
+            texts_dist = texts_dist.to(device)
+            with torch.no_grad():
+                img_feats, txt_feats = model(images_dist, texts_dist)
+
+            similarity = (img_feats @ txt_feats.T)
+            correlations_with_group = similarity.diag().float()
+            correlations_with_group /= correlations_with_group.sum()
+
+            # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
+            # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
+            total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+        total_sinkhorn_loss += weightslist[attributeid]*total_loss
+    return total_sinkhorn_loss/total_groups
+        
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -66,11 +106,12 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
-    groups_in_attrs = [3, 2, 2, 3]
+    # Race, gender, etnicity, language
+    groups_in_attrs = [9, 7]
+    idx_to_attr = {0: 'age', 1: 'race'}
 
     model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
-    # Keeps track of best performance during finetuning
     best_global_perf_file = os.path.join(
         os.path.dirname(result_dir), f'best_{args.perf_file}')
     acc_head_str = ''
@@ -83,7 +124,6 @@ if __name__ == '__main__':
     if args.perf_file != '':
         if not os.path.exists(best_global_perf_file):
             for i in range(len(groups_in_attrs)):
-                # Creates empty CSV with a row for each metric?
                 auc_head_str += ', '.join(
                     [f'auc_attr{i}_group{x}' for x in range(groups_in_attrs[i])]) + ', '
             dpd_head_str += ', '.join(
@@ -111,36 +151,30 @@ if __name__ == '__main__':
     train_files = None
     test_files = None
 
-    train_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Training',
-                                        text_source=args.text_source, summarized_note_file=args.summarized_note_file)
+    train_dataset = fairface_dataset(args.dataset_dir, preprocess, subset='Training', summarized_notes_file_train='fairface_label_train.csv')
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
                                   num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    val_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Validation')
+    val_dataset = fairface_dataset(
+        args.dataset_dir, preprocess, subset='Validation', summarized_notes_file_val='fairface_label_val.csv')
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                                 num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    test_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Test')
-    test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                                 num_workers=args.workers, pin_memory=True, drop_last=False)
+    logger.log(
+        f'# of training samples: {train_dataset.__len__()}, # of testing samples: {val_dataset.__len__()}')
 
-    logger.log(
-        f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
-
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        train_dataset)
-    logger.log(f'group size on race in training set: {group_size_on_race}')
-    logger.log(f'group size on gender in training set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in training set: {group_size_on_ethnicity}')
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        test_dataset)
-    logger.log(f'group size on race in test set: {group_size_on_race}')
-    logger.log(f'group size on gender in test set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in test set: {group_size_on_ethnicity}')
+    # get all different dataloaders for all attributes:
+    all_attribute_dataloaders = []
+    for attr in range(len(groups_in_attrs)):
+        # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
+        group_dataloaders = []
+        for i in range(groups_in_attrs[attr]):
+            tmp_dataset = fairface_dataset(args.dataset_dir, preprocess, summarized_notes_file_train='fairface_label_train.csv', summarized_notes_file_val='fairface_label_val.csv', group_loader=True,
+                                                attribute=idx_to_attr[attr], thegroup=i)
+            tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
+                                        num_workers=args.workers, pin_memory=True, drop_last=False)
+            group_dataloaders.append(endless_loader(tmp_dataloader))
+        all_attribute_dataloaders.append(group_dataloaders)
 
     def convert_models_to_fp32(model):
         for p in model.parameters():
@@ -151,7 +185,8 @@ if __name__ == '__main__':
         model.float()
     else:
         # Actually this line is unnecessary since clip by default already on float16
-        clip.model.convert_weights(model)
+        # clip.model.convert_weights(model)
+        model.float()
 
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
@@ -160,7 +195,11 @@ if __name__ == '__main__':
         {"params": model.visual.parameters(), "lr": args.lr},
     ], lr=args.lr, betas=(0.1, 0.1), eps=1e-6, weight_decay=args.weight_decay)
 
-    # CHANGE: uncommented the following if block, to load the weights
+    loss_for_FairCLIP = SamplesLoss(
+        loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
+    
+
+    # CHANGE: turned this on to include pretrained weights
     if args.pretrained_weights != "":
         checkpoint = torch.load(args.pretrained_weights)
 
@@ -181,7 +220,7 @@ if __name__ == '__main__':
 
     for epoch in range(args.num_epochs):
         avg_loss = 0
-        for batch in train_dataloader:
+        for batch_idx, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
 
             images, texts, label_and_attributes = batch
@@ -196,18 +235,25 @@ if __name__ == '__main__':
 
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
+
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
+
+            total_loss += args.lambda_fairloss * total_sinkhorn_loss
+
+            total_loss /= args.accum_iter
+
             total_loss.backward()
-            if device == "cpu":
-                optimizer.step()
-            else:
-                convert_models_to_fp32(model)
-                optimizer.step()
-                clip.model.convert_weights(model)
+
             avg_loss += total_loss.item()
+            
+            if ((batch_idx + 1) % args.accum_iter == 0) or (batch_idx + 1 == len(train_dataloader)):
+                optimizer.step()
+                optimizer.zero_grad()
+
 
         avg_loss /= len(train_dataloader)
 
-        # iterate over **validation** dataset
+        # iterate over test dataset
         eval_avg_loss = 0
         all_probs = []
         all_labels = []
@@ -216,7 +262,7 @@ if __name__ == '__main__':
             images, texts, label_and_attributes = batch
 
             images = images.to(device)
-            texts = texts.to(device)
+            texts = texts.unsqueeze(2).to(device)
             glaucoma_labels = label_and_attributes[:, 0].to(device)
             attributes = label_and_attributes[:, 1:].to(device)
 
@@ -247,11 +293,12 @@ if __name__ == '__main__':
         all_probs = np.concatenate(all_probs, axis=0)
         all_labels = np.concatenate(all_labels, axis=0)
         all_attrs = np.concatenate(all_attrs, axis=0)
-        eval_avg_loss /= len(test_dataloader)
+        eval_avg_loss /= len(val_dataloader)
 
         logger.log(
             f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
-        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(
+
+        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
             all_probs, all_labels, all_attrs.T)
 
         if best_auc <= overall_auc:
@@ -270,7 +317,7 @@ if __name__ == '__main__':
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': eval_avg_loss,
-            }, os.path.join(result_dir, f"clip.pth"))
+            }, os.path.join(result_dir, "best_model.pth"))
 
         if result_dir is not None:
             np.savez(os.path.join(result_dir, f'pred_gt_ep{epoch:03d}.npz'),

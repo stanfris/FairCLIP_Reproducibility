@@ -1,5 +1,5 @@
 from src import logger
-from src.modules import *
+from src.modules_new_data_multiclass import *
 import os
 import numpy as np
 import random
@@ -35,10 +35,10 @@ parser.add_argument('--wd', '--weight-decay', default=6e-5, type=float,
                     dest='weight_decay')
 
 parser.add_argument('--result_dir', default='./results', type=str)
-parser.add_argument('--dataset_dir', default='./data', type=str)
+parser.add_argument('--dataset_dir', default='../data/fairface/', type=str)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--workers', default=4, type=int)
-parser.add_argument('--eval_set', default='test',
+parser.add_argument('--eval_set', default='val',
                     type=str, help='options: val | test')
 parser.add_argument('--summarized_note_file', default='', type=str)
 parser.add_argument('--text_source', default='note',
@@ -58,21 +58,19 @@ if __name__ == '__main__':
 
     logger.log(f'===> random seed: {args.seed}')
 
-    result_dir = args.result_dir + f"{args.seed}"
+    logger.configure(dir=args.result_dir, log_suffix='train')
 
-    logger.configure(dir=result_dir, log_suffix='train')
-
-    with open(os.path.join(result_dir, f'args_train.txt'), 'w') as f:
+    with open(os.path.join(args.result_dir, f'args_train.txt'), 'w') as f:
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
-    groups_in_attrs = [3, 2, 2, 3]
+    groups_in_attrs = [9, 7]
 
     model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
     # Keeps track of best performance during finetuning
     best_global_perf_file = os.path.join(
-        os.path.dirname(result_dir), f'best_{args.perf_file}')
+        os.path.dirname(args.result_dir), f'best_{args.perf_file}')
     acc_head_str = ''
     auc_head_str = ''
     dpd_head_str = ''
@@ -111,36 +109,17 @@ if __name__ == '__main__':
     train_files = None
     test_files = None
 
-    train_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Training',
-                                        text_source=args.text_source, summarized_note_file=args.summarized_note_file)
+    train_dataset = fairface_dataset(args.dataset_dir, preprocess, subset='Training', summarized_notes_file_train='fairface_label_train.csv')
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
                                   num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    val_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Validation')
+    val_dataset = fairface_dataset(
+        args.dataset_dir, preprocess, subset='Validation', summarized_notes_file_val='fairface_label_val.csv')
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                                 num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    test_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Test')
-    test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                                 num_workers=args.workers, pin_memory=True, drop_last=False)
+    logger.log(f'# of training samples: {train_dataset.__len__()}, # of validation samples: {val_dataset.__len__()}')
 
-    logger.log(
-        f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
-
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        train_dataset)
-    logger.log(f'group size on race in training set: {group_size_on_race}')
-    logger.log(f'group size on gender in training set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in training set: {group_size_on_ethnicity}')
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        test_dataset)
-    logger.log(f'group size on race in test set: {group_size_on_race}')
-    logger.log(f'group size on gender in test set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in test set: {group_size_on_ethnicity}')
 
     def convert_models_to_fp32(model):
         for p in model.parameters():
@@ -150,7 +129,6 @@ if __name__ == '__main__':
     if device == "cpu":
         model.float()
     else:
-        # Actually this line is unnecessary since clip by default already on float16
         clip.model.convert_weights(model)
 
     loss_img = nn.CrossEntropyLoss()
@@ -161,12 +139,12 @@ if __name__ == '__main__':
     ], lr=args.lr, betas=(0.1, 0.1), eps=1e-6, weight_decay=args.weight_decay)
 
     # CHANGE: uncommented the following if block, to load the weights
-    if args.pretrained_weights != "":
-        checkpoint = torch.load(args.pretrained_weights)
+    # if args.pretrained_weights != "":
+    #     checkpoint = torch.load(args.pretrained_weights)
 
-        start_epoch = checkpoint['epoch'] + 1
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #     start_epoch = checkpoint['epoch'] + 1
+    #     model.load_state_dict(checkpoint['model_state_dict'])
+    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     best_epoch = 0
     best_loss = 1000000
@@ -227,32 +205,34 @@ if __name__ == '__main__':
 
                 for i in range(texts.shape[1]):
                     text_features = model.encode_text(texts[:, i, :])
-                    text_features /= text_features.norm(dim=1, keepdim=True)
+                    # text_features = text_features.norm(dim=1, keepdim=True)
                     class_text_feats.append(text_features[:, None, :])
                 # concatentate class_text_feats along the second dimension
                 class_text_feats = torch.cat(class_text_feats, dim=1)
 
+
             vl_prob, vl_logits = compute_vl_prob(
                 image_features, class_text_feats)
-
-            all_probs.append(vl_prob[:, 1].cpu().numpy())
+            print(vl_prob[0])
+            all_probs.append(vl_prob.cpu().numpy())
             all_labels.append(glaucoma_labels.cpu().numpy())
             all_attrs.append(attributes.cpu().numpy())
 
             # apply binary cross entropy loss
-            loss = F.binary_cross_entropy(
-                vl_prob[:, 1].float(), glaucoma_labels.float())
+            loss = F.cross_entropy(
+                vl_prob.float(), glaucoma_labels.float())
             eval_avg_loss += loss.item()
 
         all_probs = np.concatenate(all_probs, axis=0)
         all_labels = np.concatenate(all_labels, axis=0)
         all_attrs = np.concatenate(all_attrs, axis=0)
-        eval_avg_loss /= len(test_dataloader)
+        eval_avg_loss /= len(val_dataloader)
 
         logger.log(
             f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
-        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(
+        overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
             all_probs, all_labels, all_attrs.T)
+
 
         if best_auc <= overall_auc:
             best_auc = overall_auc
@@ -266,14 +246,14 @@ if __name__ == '__main__':
             best_between_group_disparity = between_group_disparity
 
             torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': eval_avg_loss,
-            }, os.path.join(result_dir, f"clip.pth"))
+               'epoch': epoch,
+               'model_state_dict': model.state_dict(),
+               'optimizer_state_dict': optimizer.state_dict(),
+               'loss': eval_avg_loss,
+            }, os.path.join(args.result_dir, f"clip_best.pth"))
 
-        if result_dir is not None:
-            np.savez(os.path.join(result_dir, f'pred_gt_ep{epoch:03d}.npz'),
+        if args.result_dir is not None:
+            np.savez(os.path.join(args.result_dir, f'pred_gt_ep{epoch:03d}.npz'),
                      val_pred=all_probs, val_gt=all_labels, val_attr=all_attrs)
 
         logger.log(f'---- best AUC {best_auc:.4f} at epoch {best_ep}')
@@ -334,8 +314,8 @@ if __name__ == '__main__':
                 eod_head_str = ', '.join(
                     [f'{x:.4f}' for x in best_eod_groups]) + ', '
 
-                path_str = f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}'
+                path_str = f'{args.result_dir}_seed{args.seed}_auc{best_auc:.4f}'
                 f.write(f'{best_ep}, {best_acc:.4f}, {esacc_head_str} {best_auc:.4f}, {esauc_head_str} {auc_head_str} {dpd_head_str} {eod_head_str} {group_disparity_str} {path_str}\n')
 
-    os.rename(result_dir,
-              f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}')
+    os.rename(args.result_dir,
+              f'{args.result_dir}_seed{args.seed}_auc{best_auc:.4f}')
