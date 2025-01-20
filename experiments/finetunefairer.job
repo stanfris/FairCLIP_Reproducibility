@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_a100
+#SBATCH --partition=gpu_mig
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
@@ -40,7 +40,7 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_FairerCLIP.csv
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/differentdistance/nonnormalized/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}/differentdistance/normalized/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
