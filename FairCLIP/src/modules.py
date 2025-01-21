@@ -91,10 +91,10 @@ class fair_vl_med_dataset(torch.utils.data.Dataset):
         self.summarized_notes = {}
         # summarized_note_file is a csv file that contains the summarized notes associated with npz files
         # read the summarized notes from the csv file and construct a dictionary
-        if self.subset == 'Training' and self.text_source == 'note' and summarized_note_file != '':
+        if (self.subset == 'Training' or self.present_as_training) and self.text_source == 'note' and summarized_note_file != '':
             df = pd.read_csv(os.path.join(dataset_dir, summarized_note_file))
             
-            for index, row in df.iterrows():
+            for _, row in df.iterrows():
                 self.summarized_notes[row.iloc[0].strip()] = row.iloc[2].strip()
         
         # check if the split file exists
