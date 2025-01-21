@@ -153,7 +153,7 @@ if __name__ == '__main__':
             texts = texts.to(device)
 
             logits_per_image, logits_per_text = model(images, texts)
-            attributes = label_and_attributes[:, 1:].tolist
+            attributes = label_and_attributes[:, 1:].tolist()
 
             ground_truth = torch.arange(
                 len(images), dtype=torch.long, device=device)
@@ -163,9 +163,10 @@ if __name__ == '__main__':
             correlations_batch_total += correlations_with_batch
 
             for idx, batch_correlation in enumerate(correlations_with_batch):
-                idx_attributes = label_and_attributes[idx]
+                idx_attributes = attributes[idx]
                 for i in range(len(groups_in_attrs)):
                     correlations_attributes[i][idx_to_attr_to_group[i][idx_attributes[i].detach().item()]].append(batch_correlation)
+            # idx_to_attr_to_group = {0: {0: "asian", 1: "black", 2: "white"}, 1: {0: "female", 1: "male"}, 2: {0: "non-hispanic", 1: "hispanic"}, 3: {0: "english", 1: "spanish", 2: "other"}}
 
         # after the entire dataloader has been passed, calculate distances (unnormalized)
         distances = [{"asian": 0, "black": 0, "white": 0}, {"female": 0, "male": 0}, {"non-hispanic": 0, "hispanic": 0}, {"english": 0, "spanish": 0, "other": 0}]
