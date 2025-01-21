@@ -114,42 +114,11 @@ if __name__ == '__main__':
     model, preprocess = clip.load(
         model_arch_mapping[args.model_arch], device=device, jit=False)
 
-    train_files = None
-    test_files = None
-
-    train_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Training',
-                                        text_source=args.text_source, summarized_note_file=args.summarized_note_file)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                  num_workers=args.workers, pin_memory=True, drop_last=False)
-
-    val_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Validation')
-    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                                num_workers=args.workers, pin_memory=True, drop_last=False)
-
     test_dataset = fair_vl_med_dataset(
         args.dataset_dir, preprocess, subset='Test')
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                                  num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    logger.log(
-        f'# of training samples: {train_dataset.__len__()}, # of testing samples: {test_dataset.__len__()}')
-
-    group_dataloaders = []
-    for i in range(groups_in_attrs[attr_to_idx[args.attribute]]):
-        tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
-                                            text_source='note', summarized_note_file=args.summarized_note_file,
-                                            attribute=args.attribute, thegroup=i)
-        tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
-                                    num_workers=args.workers, pin_memory=True, drop_last=False)
-        group_dataloaders.append(endless_loader(tmp_dataloader))
-
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        train_dataset)
-    logger.log(f'group size on race in training set: {group_size_on_race}')
-    logger.log(f'group size on gender in training set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in training set: {group_size_on_ethnicity}')
     group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
         test_dataset)
     logger.log(f'group size on race in test set: {group_size_on_race}')
@@ -157,23 +126,11 @@ if __name__ == '__main__':
     logger.log(
         f'group size on ethnicity in test set: {group_size_on_ethnicity}')
 
-    def convert_models_to_fp32(model):
-        for p in model.parameters():
-            p.data = p.data.float()
-            p.grad.data = p.grad.data.float()
-
     if device == "cpu":
         model.float()
     else:
         # Actually this line is unnecessary since clip by default already on float16
         clip.model.convert_weights(model)
-
-    loss_img = nn.CrossEntropyLoss()
-    loss_txt = nn.CrossEntropyLoss()
-    optimizer = optim.Adam([
-        {"params": model.transformer.parameters(), "lr": args.lr},
-        {"params": model.visual.parameters(), "lr": args.lr},
-    ], lr=args.lr, betas=(0.1, 0.1), eps=1e-6, weight_decay=args.weight_decay)
 
     loss_for_FairCLIP = SamplesLoss(
         loss="sinkhorn", p=2, blur=args.tmp_hp)  # 0.05
@@ -181,27 +138,9 @@ if __name__ == '__main__':
     if args.pretrained_weights != "":
         checkpoint = torch.load(args.pretrained_weights)
         model.load_state_dict(checkpoint['model_state_dict'])
-    #     start_epoch = checkpoint['epoch'] + 1
-    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-
-    best_epoch = 0
-    best_loss = 1000000
-    best_auc_groups = None
-    best_acc_groups = None
-    best_pred_gt_by_attr = None
-    best_auc = sys.float_info.min
-    best_acc = sys.float_info.min
-    best_es_acc = sys.float_info.min
-    best_es_auc = sys.float_info.min
-    best_between_group_disparity = None
-
-    loss_for_FairCLIP = SamplesLoss(
-        loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
 
     for epoch in range(1):
-        avg_loss = 0
         # iterate over test dataset
-        eval_avg_loss = 0
         all_probs = []
         all_labels = []
         all_attrs = []
@@ -219,10 +158,7 @@ if __name__ == '__main__':
             ground_truth = torch.arange(
                 len(images), dtype=torch.long, device=device)
 
-            total_loss = (loss_img(logits_per_image, ground_truth) +
-                          loss_txt(logits_per_text, ground_truth))/2
-
-            similarity = (logits_per_image @ logits_per_text.T)
+            similarity = logits_per_image @ logits_per_text.T
             correlations_with_batch = similarity.diag().float().tolist()
             correlations_batch_total += correlations_with_batch
 
