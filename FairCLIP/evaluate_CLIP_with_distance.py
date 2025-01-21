@@ -9,6 +9,7 @@ import json
 import pandas as pd
 from collections import Counter
 from geomloss import SamplesLoss
+from geomloss.kernel_samples import gaussian_kernel
 
 import clip
 
@@ -133,8 +134,9 @@ if __name__ == '__main__':
         # Actually this line is unnecessary since clip by default already on float16
         clip.model.convert_weights(model)
 
-    loss_for_FairCLIP = SamplesLoss(
-        loss="hausdorff", p=2)  # 0.05
+    # loss_for_FairCLIP = SamplesLoss(
+    #     loss="hausdorff", p=2)  # 0.05
+    loss_for_FairCLIP = SamplesLoss(loss='hausdorff', p=2, kernel=gaussian_kernel, blur=.05, verbose=True)
 
     if args.pretrained_weights != "":
         checkpoint = torch.load(args.pretrained_weights)
