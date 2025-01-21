@@ -134,7 +134,7 @@ if __name__ == '__main__':
         clip.model.convert_weights(model)
 
     loss_for_FairCLIP = SamplesLoss(
-        loss="sinkhorn", p=2, blur=args.tmp_hp)  # 0.05
+        loss="hausdorff", p=2)  # 0.05
 
     if args.pretrained_weights != "":
         checkpoint = torch.load(args.pretrained_weights)
