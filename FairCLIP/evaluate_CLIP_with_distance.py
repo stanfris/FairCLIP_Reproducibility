@@ -115,7 +115,7 @@ if __name__ == '__main__':
         model_arch_mapping[args.model_arch], device=device, jit=False)
 
     test_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Test')
+        args.dataset_dir, preprocess, subset='Test', present_as_training=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                                  num_workers=args.workers, pin_memory=True, drop_last=False)
 
