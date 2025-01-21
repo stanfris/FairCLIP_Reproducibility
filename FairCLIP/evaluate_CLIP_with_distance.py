@@ -165,7 +165,7 @@ if __name__ == '__main__':
             for idx, batch_correlation in enumerate(correlations_with_batch):
                 idx_attributes = attributes[idx]
                 for i in range(len(groups_in_attrs)):
-                    correlations_attributes[i][idx_to_attr_to_group[i][idx_attributes[i].detach().item()]].append(batch_correlation)
+                    correlations_attributes[i][idx_to_attr_to_group[i][idx_attributes[i]]].append(batch_correlation)
             # idx_to_attr_to_group = {0: {0: "asian", 1: "black", 2: "white"}, 1: {0: "female", 1: "male"}, 2: {0: "non-hispanic", 1: "hispanic"}, 3: {0: "english", 1: "spanish", 2: "other"}}
 
         # after the entire dataloader has been passed, calculate distances (unnormalized)
