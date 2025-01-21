@@ -172,10 +172,12 @@ if __name__ == '__main__':
         distances = [{"asian": 0, "black": 0, "white": 0}, {"female": 0, "male": 0}, {"non-hispanic": 0, "hispanic": 0}, {"english": 0, "spanish": 0, "other": 0}]
         correlations_batch_total = torch.FloatTensor(correlations_batch_total)
         correlations_batch_total = correlations_batch_total.to(device)
+        correlations_batch_total /= correlations_batch_total.sum()
         for attribute_id, num_groups in enumerate(groups_in_attrs):
             for group_id in range(num_groups):
                 correlations_group = correlations_attributes[attribute_id][idx_to_attr_to_group[attribute_id][group_id]]
                 correlations_group = torch.FloatTensor(correlations_group).to(device)
+                correlations_group /= correlations_group.sum()
                 distance = loss_for_FairCLIP(correlations_batch_total[:, None], correlations_group[:, None])
                 distances[attribute_id][idx_to_attr_to_group[attribute_id][group_id]] = distance
                 logger.log(f"Attribute: {attribute_id}, group: {idx_to_attr_to_group[attribute_id][group_id]}: distance: {distance}")
