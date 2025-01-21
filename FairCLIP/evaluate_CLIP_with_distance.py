@@ -17,11 +17,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch import optim
 import torch.nn.functional as F
-
+import warnings
 import sys
 sys.path.append('.')
 
-
+warnings.filterwarnings("ignore")
 parser = argparse.ArgumentParser(description='CLIP Training/Fine-Tuning')
 
 parser.add_argument('--seed', default=-1, type=int,
@@ -170,11 +170,11 @@ if __name__ == '__main__':
         # after the entire dataloader has been passed, calculate distances (unnormalized)
         distances = [{"asian": 0, "black": 0, "white": 0}, {"female": 0, "male": 0}, {"non-hispanic": 0, "hispanic": 0}, {"english": 0, "spanish": 0, "other": 0}]
         correlations_batch_total = torch.FloatTensor(correlations_batch_total)
-	correlations_batch_total = correlations_batch_total.to(device)
+        correlations_batch_total = correlations_batch_total.to(device)
         for attribute_id, num_groups in enumerate(groups_in_attrs):
             for group_id in range(num_groups):
                 correlations_group = correlations_attributes[attribute_id][idx_to_attr_to_group[attribute_id][group_id]]
                 correlations_group = torch.FloatTensor(correlations_group).to(device)
                 distance = loss_for_FairCLIP(correlations_batch_total[:, None], correlations_group[:, None])
                 distances[attribute_id][idx_to_attr_to_group[attribute_id][group_id]] = distance
-                print(f"Attribute: {attribute_id}, group: {idx_to_attr_to_group[attribute_id][group_id]}: distance: {distance}")
+                logger.log(f"Attribute: {attribute_id}, group: {idx_to_attr_to_group[attribute_id][group_id]}: distance: {distance}")

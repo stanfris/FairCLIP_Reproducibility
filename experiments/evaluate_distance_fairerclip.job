@@ -32,26 +32,25 @@ ATTRIBUTE_TYPE=ethnicity # Options: race | gender | ethnicity | language
 
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairerCLIP_eval_distance.csv
 
-python3 ./evaluate_CLIP.py \
+python3 ./evaluate_CLIP_with_distance.py \
 		--dataset_dir ${DATASET_DIR} \
 		--result_dir ${RESULT_DIR}/differentdistance/normalized \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_32252_seed252_auc0.6678/best_model.pth
+		--pretrained_weights ${RESULT_DIR}/differentdistance/normalized/glaucoma_FairerCLIP_${MODEL_ARCH}_32_1e-7_1e-51114_seed1114_auc0.6929/best_model.pth
 
-python3 ./evaluate_CLIP.py \
+python3 ./evaluate_CLIP_with_distance.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ${RESULT_DIR}/fairerCLIP/racegender/64 \
+                --result_dir ${RESULT_DIR}/differentdistance/normalized \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_323411_seed3411_auc0.5713/best_model.pth
-python3 ./evaluate_CLIP.py \
+                --pretrained_weights ${RESULT_DIR}/differentdistance/normalized/glaucoma_FairerCLIP_${MODEL_ARCH}_32_1e-7_1e-54264_seed4264_auc0.6539/best_model.pth
+python3 ./evaluate_CLIP_with_distance.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ${RESULT_DIR}/fairerCLIP/racegender/64 \
+                --result_dir ${RESULT_DIR}/differentdistance/normalized \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_329016_seed9016_auc0.7406/best_model.pth
-
+                --pretrained_weights ${RESULT_DIR}/differentdistance/normalized/glaucoma_FairerCLIP_${MODEL_ARCH}_32_1e-7_1e-54849_seed4849_auc0.6866/best_model.pth
