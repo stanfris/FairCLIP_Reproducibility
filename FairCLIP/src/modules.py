@@ -80,12 +80,13 @@ def count_number_of_groups(input_dataset):
 
 
 class fair_vl_med_dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, ruleout_unknown=False):
+    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, ruleout_unknown=False, present_as_training=False):
         self.preprocess = preprocess
         self.dataset_dir = os.path.join(dataset_dir, subset)
         self.subset = subset
         self.text_source = text_source
         self.ruleout_unknown = ruleout_unknown
+        self.present_as_training = present_as_training
 
         self.summarized_notes = {}
         # summarized_note_file is a csv file that contains the summarized notes associated with npz files
@@ -123,7 +124,7 @@ class fair_vl_med_dataset(torch.utils.data.Dataset):
         slo_fundus = data['slo_fundus'].astype(np.float32) # original size: (664, 512)
         slo_fundus = self.preprocess(Image.fromarray(slo_fundus))
 
-        if self.subset == 'Training':
+        if self.subset == 'Training' or self.present_as_training:
             if self.text_source == 'note':
 
                 note = self.summarized_notes[self.files[idx]].strip()
