@@ -52,13 +52,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = natsorted(os.listdir(self.dataset_dir))[:1000]
+        self.files = natsorted(os.listdir(self.dataset_dir))[:11000]
 
         self.summarized_notes = {}
 
         # check if the split file exists
         if subset=='Training':
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train))[:1000]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:11000]
             self.data = df
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
 
@@ -74,7 +74,7 @@ class fairface_dataset(torch.utils.data.Dataset):
                 self.files = tmp_files
         else:
             print("Loading validation")
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:1000]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:11000]
             self.data = df
             if group_loader:
                 tmp_files = []
