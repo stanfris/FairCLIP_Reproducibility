@@ -1,0 +1,57 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=9
+#SBATCH --gpus=1
+#SBATCH --job-name=evaluation
+#SBATCH --ntasks=1
+#SBATCH --time=00:30:00
+#SBATCH --mem=32000M
+#SBATCH --output=fairerclip_distance_b16_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+pip install openai-clip
+pip install geomloss
+# Run your code
+cd ../FairCLIP
+#srun ./FairCLIP/scripts/evaluate_CLIP.sh
+DATASET_DIR=../data/Harvard-FairVLMed
+# DATASET_DIR=/PATH-TO_DATASET/FairVLMed
+RESULT_DIR=../results
+MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
+MODALITY_TYPE='slo_fundus'
+LR=1e-5
+BATCH_SIZE=32
+ATTRIBUTE_TYPE=ethnicity # Options: race | gender | ethnicity | language
+
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairerCLIP_eval_distance.csv
+
+python3 ./evaluate_CLIP.py \
+		--dataset_dir ${DATASET_DIR} \
+		--result_dir ${RESULT_DIR}/differentdistance/normalized \
+		--lr ${LR} \
+		--perf_file ${PERF_FILE} \
+		--model_arch ${MODEL_ARCH} \
+		--pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_32252_seed252_auc0.6678/best_model.pth
+
+python3 ./evaluate_CLIP.py \
+                --dataset_dir ${DATASET_DIR} \
+                --result_dir ${RESULT_DIR}/fairerCLIP/racegender/64 \
+                --lr ${LR} \
+                --perf_file ${PERF_FILE} \
+                --model_arch ${MODEL_ARCH} \
+                --pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_323411_seed3411_auc0.5713/best_model.pth
+python3 ./evaluate_CLIP.py \
+                --dataset_dir ${DATASET_DIR} \
+                --result_dir ${RESULT_DIR}/fairerCLIP/racegender/64 \
+                --lr ${LR} \
+                --perf_file ${PERF_FILE} \
+                --model_arch ${MODEL_ARCH} \
+                --pretrained_weights ${RESULT_DIR}/fairerCLIP/racegender/64/glaucoma_FairerCLIP_${MODEL_ARCH}_329016_seed9016_auc0.7406/best_model.pth
+
