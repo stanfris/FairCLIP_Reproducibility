@@ -184,3 +184,14 @@ if __name__ == '__main__':
                 distance = loss_for_FairCLIP(correlations_batch_total[:, None], correlations_group[:, None])
                 distances[attribute_id][idx_to_attr_to_group[attribute_id][group_id]] = distance
                 logger.log(f"Attribute: {attribute_id}, group: {idx_to_attr_to_group[attribute_id][group_id]}: distance: {distance}")
+        # distance between all attributes
+        correlations_group_white = torch.FloatTensor(correlations_attributes[0]["white"]).to(device)
+        correlations_group_asian = torch.FloatTensor(correlations_attributes[0]["asian"]).to(device)
+        correlations_group_black = torch.FloatTensor(correlations_attributes[0]["black"]).to(device)
+        distance_white_black = loss_for_FairCLIP(correlations_group_white[:, None], correlations_group_black[:, None])
+        distance_white_asian = loss_for_FairCLIP(correlations_group_white[:, None], correlations_group_asian[:, None])
+        distance_black_asian = loss_for_FairCLIP(correlations_group_black[:, None], correlations_group_asian[:, None])
+        logger.log("other results: race distances")
+        logger.log(f"distance: black white: {distance_white_black}")
+        logger.log(f"distance: black asian: {distance_black_asian}")
+        logger.log(f"distance: white asian: {distance_white_asian}")
