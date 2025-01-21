@@ -111,8 +111,9 @@ if __name__ == '__main__':
     # If using GPU then use mixed precision training.
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     # Must set jit=False for training
-    model, preprocess = clip.load(
-        model_arch_mapping[args.model_arch], device=device, jit=False)
+    # model, preprocess = clip.load(
+    #     model_arch_mapping[args.model_arch], device=device, jit=False)
+    model, preprocess = clip.load("ViT-B/16", device=device, jit=False)
 
     test_dataset = fair_vl_med_dataset(
         args.dataset_dir, preprocess, subset='Test', present_as_training=True, summarized_note_file="gpt-4_summarized_notes.csv")
