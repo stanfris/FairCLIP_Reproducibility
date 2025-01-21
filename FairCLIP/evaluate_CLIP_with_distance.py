@@ -115,9 +115,9 @@ if __name__ == '__main__':
         model_arch_mapping[args.model_arch], device=device, jit=False)
 
     test_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Test', present_as_training=True)
+        args.dataset_dir, preprocess, subset='Test', present_as_training=True, summarized_note_file="gpt-4_summarized_notes.csv")
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                                 num_workers=args.workers, summarized_note_file="gpt-4_summarized_notes.csv", pin_memory=True, drop_last=False)
+                                 num_workers=args.workers, pin_memory=True, drop_last=False)
 
     group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
         test_dataset)
