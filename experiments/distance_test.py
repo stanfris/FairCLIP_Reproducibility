@@ -4,10 +4,13 @@ import argparse
 import sys
 
 sys.path.append('../FairCLIP/src')
-from modules import fair_vl_med_dataset
+from modules import fair_vl_med_dataset, set_random_seed
 
-import random
-import numpy as np
+
+from pathlib import Path
+
+import pickle
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -28,22 +31,14 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--seed', default=42, type=int, help='seed for initializing training. ')
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--dataset_dir', default='./data', type=str)
+    parser.add_argument('--results_dir', type=str)
     parser.add_argument('--workers', default=4, type=int)
     parser.add_argument('--summarized_note_file', default="gpt-4_summarized_notes.csv", type=str)
     parser.add_argument('--model_arch', required=True, type=str, help='options: vit-b16 | vit-l14')
     parser.add_argument('--checkpoint', type=str, help="Model checkpoint path")
+    parser.add_argument('--out', type=str, help="Output (pickle) file")
 
     return parser
-
-
-def set_random_seed(seed: int) -> None:
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed) # if use multi-GPU
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
-    np.random.seed(seed)
-    random.seed(seed)
 
 
 @torch.no_grad()
@@ -145,3 +140,12 @@ if __name__ == "__main__":
         distance = distances[attr_group]
         print(f"Atttribute: {attribute_name}, group: {group_name}, distance: {distance}")
 
+
+    if args.out is not None and args.results_dir is not None:
+        out_path = Path(args.results_dir) / args.out
+        out_data = {"all": correlations, "groups": group_correlations}
+
+        with open(out_path, "wb") as f:
+            pickle.dump(out_data, f)
+
+        print(f"Wrote similarity scores to {out_path}")
