@@ -55,6 +55,8 @@ parser.add_argument('--batchsize_fairloss', default=64, type=int)
 parser.add_argument('--lambda_fairloss', default=1e-4, type=float)
 parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
 parser.add_argument('--accum_iter', default=1, type=int)
+parser.add_argument('--sinkhorn_diameter', default=None, type=float)
+parser.add_argument('--sinkhorn_scaling', default=0.9, type=float)
 parser.add_argument(
   "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
   nargs="*",  # 0 or more values expected => creates a list
@@ -223,8 +225,8 @@ if __name__ == '__main__':
     ], lr=args.lr, betas=(0.1, 0.1), eps=1e-6, weight_decay=args.weight_decay)
 
     loss_for_FairCLIP = SamplesLoss(
-        loss="sinkhorn", p=2, diameter=2, blur=args.sinkhorn_blur, scaling=0.9)
-    
+        loss="sinkhorn", p=2, diameter=args.sinkhorn_diameter, blur=args.sinkhorn_blur, scaling=args.sinkhorn_scaling)
+
 
     # CHANGE: turned this on to include pretrained weights
     if args.pretrained_weights != "":
