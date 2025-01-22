@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_mig
+#SBATCH --partition=gpu_a100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=01:00:00
 #SBATCH --mem=32000M
-#SBATCH --output=FairerHighBatchSizeCLIP_%A.out
+#SBATCH --output=FairerdiffsinkhornCLIP_%A.out
 
 module purge
 module load 2023
@@ -31,16 +31,16 @@ ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
 LR=1e-5
 BATCH_SIZE=32
-LAMBDA=1e-7
+LAMBDA=1e-4
 BATCH_SIZE_FAIR=32
 ACCUM_ITER=1
 FOLDER=$((BATCH_SIZE_FAIR*ACCUM_ITER))
 
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_FairerCLIP.csv
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_FairerCLIP_differentsinkhorn.csv
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/differentdistance/normalized/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}/differentdistance/differentsinkhorn/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
