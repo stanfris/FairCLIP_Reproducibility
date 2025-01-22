@@ -30,8 +30,7 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--dataset_dir', default='./data', type=str)
     parser.add_argument('--workers', default=4, type=int)
     parser.add_argument('--summarized_note_file', default="gpt-4_summarized_notes.csv", type=str)
-    parser.add_argument('--model_arch', required=True,
-                        type=str, help='options: vit-b16 | vit-l14')
+    parser.add_argument('--model_arch', required=True, type=str, help='options: vit-b16 | vit-l14')
     parser.add_argument('--checkpoint', type=str, help="Model checkpoint path")
 
     return parser
@@ -41,7 +40,7 @@ def set_random_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed) # if use multi-GPU
-    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
     np.random.seed(seed)
     random.seed(seed)
@@ -55,7 +54,7 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
     correlation_group_indices = {}
 
     if standardize and normalize:
-        raise ValueError("Normalize and Standardize cannot be true at the same time.")
+        raise ValueError("Normalize and Standardize cannot be used at the same time.")
 
     for batch in data_loader:
         images, texts, label_and_attributes = batch
@@ -145,6 +144,4 @@ if __name__ == "__main__":
         group_name = IDX_TO_GROUP[attr_idx][group_idx]
         distance = distances[attr_group]
         print(f"Atttribute: {attribute_name}, group: {group_name}, distance: {distance}")
-
-    # python3 distance.py --seed 42 -batch_size 32 --model_arch vit-b16
 
