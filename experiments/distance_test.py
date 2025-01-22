@@ -48,32 +48,34 @@ def set_random_seed(seed: int) -> None:
 
 
 @torch.no_grad()
-def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, normalize: bool = True) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
+def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, normalize: bool = False, standardize: bool = True) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
     model.eval()
 
     correlations = []
     correlation_group_indices = {}
+
+    if standardize and normalize:
+        raise ValueError("Normalize and Standardize cannot be true at the same time.")
 
     for batch in data_loader:
         images, texts, label_and_attributes = batch
         images = images.to(device)
         texts = texts.to(device)
 
-        with torch.no_grad():
-            logits_per_image, logits_per_text = model(images, texts)
-            attributes = label_and_attributes[:, 1:].tolist()
-            similarity = logits_per_image @ logits_per_text.T
-            similarity = similarity.diag().float().tolist()
-            correlations += similarity
+        logits_per_image, logits_per_text = model(images, texts)
+        attributes = label_and_attributes[:, 1:].tolist()
+        similarity = logits_per_image @ logits_per_text.T
+        similarity = similarity.diag().float().tolist()
+        correlations += similarity
 
-            for sample_idx, sample_attributes in enumerate(attributes):
-                for attr_idx, attr_group in enumerate(sample_attributes):
-                    key = (attr_idx, attr_group)
+        for sample_idx, sample_attributes in enumerate(attributes):
+            for attr_idx, attr_group in enumerate(sample_attributes):
+                key = (attr_idx, attr_group)
 
-                    if key not in correlation_group_indices:
-                        correlation_group_indices[key] = []
+                if key not in correlation_group_indices:
+                    correlation_group_indices[key] = []
 
-                    correlation_group_indices[key].append(similarity[sample_idx])
+                correlation_group_indices[key].append(similarity[sample_idx])
 
     # convert to tensors
     correlations = torch.FloatTensor(correlations)
@@ -83,10 +85,15 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
         conv_values = torch.FloatTensor(values)
         if normalize:
             conv_values /= sum(conv_values)
+        if standardize:
+            conv_values = (conv_values - torch.mean(conv_values)) / torch.std(conv_values)
         converted_correlation_group_indices[key] = conv_values
 
     if normalize:
         correlations = correlations / sum(correlations)
+
+    if standardize:
+        correlations = (correlations - torch.mean(correlations)) / torch.std(correlations)
 
     return correlations, converted_correlation_group_indices
 
