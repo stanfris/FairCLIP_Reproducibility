@@ -52,13 +52,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = natsorted(os.listdir(self.dataset_dir))[:110]
+        self.files = natsorted(os.listdir(self.dataset_dir))[:1100]
 
         self.summarized_notes = {}
 
         # check if the split file exists
         if subset=='Training':
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:110]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:1100]
             self.data = df
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
 
@@ -74,7 +74,7 @@ class fairface_dataset(torch.utils.data.Dataset):
                 self.files = tmp_files
         else:
             print("Loading validation")
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:110]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:1100]
             self.data = df
             if group_loader:
                 tmp_files = []
@@ -185,8 +185,9 @@ def accuracy(output, target, topk=(1, 5)):
     with torch.no_grad():
         maxk = max(topk)
         batch_size = target.shape[0]
-
+        output = torch.tensor(output).to(torch.float32)
         _, pred = output.topk(maxk, dim=1)
+        target = torch.tensor(target).to(torch.int64)
         target = target.view(batch_size, 1).repeat(1, maxk)
         
         correct = (pred == target)
@@ -228,11 +229,9 @@ def auc_score(pred_prob, y):
     
     return AUC
 
-def num_to_onehot(nums, num_to_class):
+def num_to_onehot(nums, num_classes):
     nums = nums.astype(int)
-    n_values = num_to_class
-    onehot_vec = np.eye(n_values)[nums]
-    return onehot_vec
+    return np.eye(num_classes)[nums]
 
 def prob_to_label(pred_prob):
     # Find the indices of the highest probabilities for each sample
@@ -311,7 +310,6 @@ def multiclass_demographic_parity_(pred_prob, y, attrs):
             idx = attrs==j
             tmp = np.abs(tmp_preds.mean().item() - tmp_preds[idx].mean().item()) + np.abs(tmp_not_preds.mean().item() - tmp_not_preds[idx].mean().item())
             dp_by_attrs.append(tmp)
-            print(tmp)
         mc_dpd += np.mean(dp_by_attrs).item()
 
     mc_dpd = mc_dpd / pred_prob.shape[1]
@@ -401,53 +399,6 @@ def equity_scaled_AUC(output, target, attrs, alpha=1., num_classes=2):
     es_auc = (overall_auc / (alpha*tmp + 1))
 
     return es_auc
-
-def evaluate_perf_by_attr(preds, gts, attrs=None, num_classes=2):
-
-    esaccs_by_attrs = []
-    esaucs_by_attrs = []
-    aucs_by_attrs = []
-    dpds = []
-    dprs = []
-    eods = []
-    eors = []
-    for i in range(attrs.shape[0]):
-        attr = attrs[i,:]
-
-        es_acc = equity_scaled_accuracy(preds, gts, attr)
-        esaccs_by_attrs.append(es_acc)
-        es_auc = equity_scaled_AUC(preds, gts, attr, num_classes=num_classes)
-        esaucs_by_attrs.append(es_auc)
-
-        aucs_by_group = []
-        elements = np.unique(attr).astype(int)
-        for e in elements:
-            aucs_by_group.append( compute_auc(preds[attr == e], gts[attr == e], num_classes=num_classes) )
-        aucs_by_attrs.append(aucs_by_group)
-        pred_labels = (preds >= 0.5).astype(float)
-        if num_classes == 2:
-            dpd = demographic_parity_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            dpr = demographic_parity_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eor = equalized_odds_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-        elif num_classes > 2:
-            dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
-            eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
-
-        dpds.append(dpd)
-        eods.append(eod)
-
-    return esaccs_by_attrs, esaucs_by_attrs, aucs_by_attrs, dpds, eods
 
 
 def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):

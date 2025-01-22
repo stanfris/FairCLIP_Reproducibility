@@ -64,7 +64,7 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
-    groups_in_attrs = [9, 7]
+    groups_in_attrs = [9, 2]
 
     model_arch_mapping = {'RN50':'RN50', 'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
@@ -213,14 +213,13 @@ if __name__ == '__main__':
             vl_prob, vl_logits = compute_vl_prob(
                 image_features, class_text_feats)
 
-            all_probs.append(vl_prob[:, 1].cpu().numpy())
+            all_probs.append(vl_prob.cpu().numpy())
             all_labels.append(combined_labels.cpu().numpy())
             all_attrs.append(attributes.cpu().numpy())
             # apply binary cross entropy loss
             loss = F.cross_entropy(
-                vl_prob.type(torch.LongTensor), int(combined_labels))
+                vl_logits, combined_labels.long())
             eval_avg_loss += loss.item()
-
         all_probs = np.concatenate(all_probs, axis=0)
         all_labels = np.concatenate(all_labels, axis=0)
         all_attrs = np.concatenate(all_attrs, axis=0)
@@ -229,7 +228,7 @@ if __name__ == '__main__':
         logger.log(
             f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
         overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
-            all_probs, all_labels, all_attrs.T)
+            all_probs, all_labels, all_attrs.T, num_classes=7)
 
 
         if best_auc <= overall_auc:
