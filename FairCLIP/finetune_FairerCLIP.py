@@ -65,7 +65,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
-    correlations_with_batch /= correlations_with_batch.sum()
+    # correlations_with_batch /= correlations_with_batch.sum()
     total_groups = 0
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
         if weightslist[attributeid] == 0:
@@ -81,6 +81,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
 
             similarity = (img_feats @ txt_feats.T)
             correlations_with_group = similarity.diag().float()
+            # correlations_with_group /= correlations_with_group.sum()
 
             # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     ], lr=args.lr, betas=(0.1, 0.1), eps=1e-6, weight_decay=args.weight_decay)
 
     loss_for_FairCLIP = SamplesLoss(
-        loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
+        loss="sinkhorn", p=2, diameter=2, blur=args.sinkhorn_blur, scaling=0.9)
     
 
     # CHANGE: turned this on to include pretrained weights
