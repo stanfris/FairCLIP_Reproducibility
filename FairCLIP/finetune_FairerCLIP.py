@@ -62,10 +62,12 @@ parser.add_argument(
   default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
 )
 
-def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist):
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist, standardize=True):
     total_sinkhorn_loss = 0
     similarity = (logits_per_image @ logits_per_text.T)
     correlations_with_batch = similarity.diag().float()
+    if standardize:
+        correlations_with_batch = (correlations_with_batch - torch.mean(correlations_with_batch))/torch.std(correlations_with_batch)
     # correlations_with_batch /= correlations_with_batch.sum()
     total_groups = 0
     for attributeid, group_dataloader in enumerate(all_attribute_dataloaders):
@@ -82,6 +84,8 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
 
             similarity = (img_feats @ txt_feats.T)
             correlations_with_group = similarity.diag().float()
+            if standardize:
+                correlations_with_group = (correlations_with_group - torch.mean(correlations_with_group))/torch.std(correlations_with_group)
             # correlations_with_group /= correlations_with_group.sum()
 
             # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
