@@ -35,13 +35,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             "more than 70": 8
         }
         self.race_mapping = {
-            "White": 0,
-            "Black": 1,
-            "Latino_Hispanic": 2,
-            "East Asian": 3,
-            "Southeast Asian": 4,
-            "Indian": 5,
-            "Middle Eastern": 6
+            "East Asian": 0,
+            "Indian": 1,
+            "Black": 2,
+            "White": 3,
+            "Middle Eastern": 4,
+            "Southeast Asian": 5,
+            "Latino_Hispanic": 6
         }
         self.age_mapping_inv = {v: k for k, v in self.age_mapping.items()}
         self.race_mapping_inv = {v: k for k, v in self.race_mapping.items()}
@@ -52,13 +52,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = natsorted(os.listdir(self.dataset_dir))[:400]
+        self.files = natsorted(os.listdir(self.dataset_dir))[:110]
 
         self.summarized_notes = {}
 
         # check if the split file exists
         if subset=='Training':
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train))[:-400]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:110]
             self.data = df
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
 
@@ -74,7 +74,7 @@ class fairface_dataset(torch.utils.data.Dataset):
                 self.files = tmp_files
         else:
             print("Loading validation")
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:400]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:110]
             self.data = df
             if group_loader:
                 tmp_files = []
@@ -86,6 +86,8 @@ class fairface_dataset(torch.utils.data.Dataset):
                     if group == thegroup:
                         tmp_files.append(file)
                 self.files = tmp_files
+            
+        
 
 
 
@@ -94,43 +96,38 @@ class fairface_dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         image_path = os.path.join(self.dataset_dir, self.files[idx])
-        img = Image.open(image_path).convert('RGB')
+        img = Image.open(image_path)
         final_image = self.preprocess(img)
         row = self.data.loc[idx].to_dict()
-        gender_label = int(row['gender'] == 'Male')
-        pos_note = 'A Manly Male man boy bloke guy'
-        neg_note = 'A feminine female woman girl gal'
+        race_label = int(self.race_mapping.get(row['race']))
         if self.subset == 'Training':
             note = "Image of a person that is " + row['age']+ " years old, and their race is: " + row['race'] + "They are " + row['gender']
             token = clip.tokenize(note)
             token = token.squeeze()
         else:
-            result_set = ['a photo of a white man',
-            'a photo of a white woman',
-             'a photo of a black man',
-             'a photo of a black woman',
-             'a photo of a latino man',
-             'a photo of a latino woman',
-             'a photo of an east asian man',
-             'a photo of an east asian woman',
-             'a photo of a southeast asian man',
-             'a photo of a southeast asian woman',
-             'a photo of an indian man',
-             'a photo of an indian woman',
-             'a photo of a middle eastern man',
-             'a photo of a middle eastern woman']
-            token = clip.tokenize(result_set[0])
-            for result in result_set[1:]:
-                class_token = clip.tokenize(result)
-                token = torch.cat((token, class_token), dim=0)        
+            eastasian = 'A picture of an East Asian person'
+            eastasian = clip.tokenize(eastasian)
+            indian = 'A picture of an Indian person'
+            indian= clip.tokenize(indian)
+            black = 'A picture of a Black person'
+            black=clip.tokenize(black)
+            white = 'A picture of a White person'
+            white=clip.tokenize(white)
+            middle_eastern = 'A picture of a Middle Eastern person'
+            middle_eastern = clip.tokenize(middle_eastern)
+            southeast_asian = 'A picture of a Southeast Asian person'
+            southeast_asian = clip.tokenize(southeast_asian)
+            latino_hispanic = 'A picture of a Latino Hispanic person'
+            latino_hispanic = clip.tokenize(latino_hispanic)
+            # concatenate two tensors together, the final tensor will be at size of 2, 77
+            token = torch.cat([eastasian, indian, black, white, middle_eastern, southeast_asian, latino_hispanic], dim=0)
+        # extract labels from df
+        
 
         age_label = int(self.age_mapping.get(row["age"]))
-        race_label = int(self.race_mapping.get(row["race"]))
+        gender_label = int(row["gender"]=='Male')
         
-        # Combine gender and race into a single label
-        combined_label = (gender_label+1)%2 + race_label * 2
-        
-        label_and_attributes = torch.tensor([combined_label, age_label])
+        label_and_attributes = torch.tensor([race_label, age_label, gender_label])
 
         return final_image, token, label_and_attributes
 
@@ -458,48 +455,61 @@ def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
     esaucs_by_attrs = []
     aucs_by_attrs = []
     dpds = []
-    dprs = []
     eods = []
-    eors = []
     between_group_disparity = []
 
     overall_acc = accuracy(preds, gts, topk=(1,))
+    
     overall_auc = compute_auc(preds, gts, num_classes=num_classes)
 
     for i in range(attrs.shape[0]):
-        attr = attrs[i,:]
+        attr = attrs[i, :]  # Attribute i
 
         es_acc = equity_scaled_accuracy(preds, gts, attr)
         esaccs_by_attrs.append(es_acc)
+
         es_auc = equity_scaled_AUC(preds, gts, attr, num_classes=num_classes)
         esaucs_by_attrs.append(es_auc)
 
         aucs_by_group = []
         elements = np.unique(attr).astype(int)
         for e in elements:
-            aucs_by_group.append( compute_auc(preds[attr == e], gts[attr == e], num_classes=num_classes) )
+            aucs_by_group.append(
+                compute_auc(preds[attr == e], gts[attr == e], num_classes=num_classes)
+            )
         aucs_by_attrs.append(aucs_by_group)
-        std_disparity, max_disparity = compute_between_group_disparity(aucs_by_group, overall_auc)
+
+        std_disparity, max_disparity = compute_between_group_disparity(
+            aucs_by_group, overall_auc
+        )
         between_group_disparity.append([std_disparity, max_disparity])
 
-        pred_labels = (preds >= 0.5).astype(float)
+        pred_labels = preds.argmax(axis=1) if num_classes > 2 else (preds >= 0.5).astype(float)
+
         if num_classes == 2:
-            dpd = demographic_parity_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-        elif num_classes > 2:
+            dpd = demographic_parity_difference(
+                gts, pred_labels, sensitive_features=attr
+            )
+            eod = equalized_odds_difference(
+                gts, pred_labels, sensitive_features=attr
+            )
+        else:
             dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
             eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
 
         dpds.append(dpd)
         eods.append(eod)
 
-    return overall_acc, esaccs_by_attrs, overall_auc, esaucs_by_attrs, aucs_by_attrs, dpds, eods, between_group_disparity
+    return (
+        overall_acc,
+        esaccs_by_attrs,
+        overall_auc,
+        esaucs_by_attrs,
+        aucs_by_attrs,
+        dpds,
+        eods,
+        between_group_disparity,
+    )
 
 def compute_between_group_disparity(auc_list, overall_auc):
     return np.std(auc_list) / overall_auc, (np.max(auc_list)-np.min(auc_list)) / overall_auc

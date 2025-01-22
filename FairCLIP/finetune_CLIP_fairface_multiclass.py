@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(description='CLIP Training/Fine-Tuning')
 parser.add_argument('--seed', default=-1, type=int,
                     help='seed for initializing training. ')
 parser.add_argument('--num_epochs', default=10, type=int)
-parser.add_argument('--lr', '--learning-rate', default=0.05, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.000001, type=float,
                     metavar='LR', help='initial learning rate', dest='lr')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
@@ -36,7 +36,7 @@ parser.add_argument('--wd', '--weight-decay', default=6e-5, type=float,
 
 parser.add_argument('--result_dir', default='./results', type=str)
 parser.add_argument('--dataset_dir', default='../data/fairface/', type=str)
-parser.add_argument('--batch_size', default=32, type=int)
+parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--workers', default=4, type=int)
 parser.add_argument('--eval_set', default='val',
                     type=str, help='options: val | test')
@@ -44,7 +44,7 @@ parser.add_argument('--summarized_note_file', default='', type=str)
 parser.add_argument('--text_source', default='note',
                     type=str, help='options: note | label')
 parser.add_argument('--perf_file', default='', type=str)
-parser.add_argument('--model_arch', default='vit-b16',
+parser.add_argument('--model_arch', default='RN50',
                     type=str, help='options: vit-b16 | vit-l14')
 parser.add_argument('--pretrained_weights', default='', type=str)
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # the number of groups in each attribute
     groups_in_attrs = [9, 7]
 
-    model_arch_mapping = {'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
+    model_arch_mapping = {'RN50':'RN50', 'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
     # Keeps track of best performance during finetuning
     best_global_perf_file = os.path.join(
@@ -195,7 +195,7 @@ if __name__ == '__main__':
 
             images = images.to(device)
             texts = texts.to(device)
-            glaucoma_labels = label_and_attributes[:, 0].to(device)
+            combined_labels = label_and_attributes[:, 0].to(device)
             attributes = label_and_attributes[:, 1:].to(device)
 
             class_text_feats = []
@@ -205,22 +205,20 @@ if __name__ == '__main__':
 
                 for i in range(texts.shape[1]):
                     text_features = model.encode_text(texts[:, i, :])
-                    # text_features = text_features.norm(dim=1, keepdim=True)
+                    text_features /= text_features.norm(dim=1, keepdim=True)
                     class_text_feats.append(text_features[:, None, :])
                 # concatentate class_text_feats along the second dimension
                 class_text_feats = torch.cat(class_text_feats, dim=1)
 
-
             vl_prob, vl_logits = compute_vl_prob(
                 image_features, class_text_feats)
-            print(vl_prob[0])
-            all_probs.append(vl_prob.cpu().numpy())
-            all_labels.append(glaucoma_labels.cpu().numpy())
-            all_attrs.append(attributes.cpu().numpy())
 
+            all_probs.append(vl_prob[:, 1].cpu().numpy())
+            all_labels.append(combined_labels.cpu().numpy())
+            all_attrs.append(attributes.cpu().numpy())
             # apply binary cross entropy loss
             loss = F.cross_entropy(
-                vl_prob.float(), glaucoma_labels.float())
+                vl_prob.type(torch.LongTensor), int(combined_labels))
             eval_avg_loss += loss.item()
 
         all_probs = np.concatenate(all_probs, axis=0)

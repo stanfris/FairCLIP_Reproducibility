@@ -31,12 +31,12 @@ ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
 LR=1e-5
 BATCH_SIZE=32
-LAMBDA=1e-4
+LAMBDA=1e-5
 BATCH_SIZE_FAIR=32
 ACCUM_ITER=1
 FOLDER=$((BATCH_SIZE_FAIR*ACCUM_ITER))
 
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_FairerCLIP_differentsinkhorn.csv
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}FairerCLIP_differentsinkhorn.csv
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
