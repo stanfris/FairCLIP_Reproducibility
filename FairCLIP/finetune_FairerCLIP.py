@@ -17,11 +17,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch import optim
 import torch.nn.functional as F
+import warnings
 
 import sys
 sys.path.append('.')
 
-
+warnings.filterwarnings("ignore")
 parser = argparse.ArgumentParser(description='FairCLIP Training/Fine-Tuning')
 
 parser.add_argument('--seed', default=-1, type=int,
