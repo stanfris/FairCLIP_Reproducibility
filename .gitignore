@@ -9,6 +9,9 @@ results/
 results
 .DS_Store
 mae/tmp.out--blip_feats_select
+
+*.swp
+
 # From their repo:
 
 FUNDUS_Dataset
