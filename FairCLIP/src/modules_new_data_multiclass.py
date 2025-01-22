@@ -127,7 +127,7 @@ class fairface_dataset(torch.utils.data.Dataset):
         age_label = int(self.age_mapping.get(row["age"]))
         gender_label = int(row["gender"]=='Male')
         
-        label_and_attributes = torch.tensor([race_label, age_label, gender_label])
+        label_and_attributes = torch.tensor([race_label, race_label])
 
         return final_image, token, label_and_attributes
 
@@ -205,7 +205,7 @@ def compute_auc(pred_prob, y, num_classes=2):
         pred_prob = pred_prob.detach().cpu().numpy()
     if torch.is_tensor(y):
         y = y.detach().cpu().numpy()
-
+    print(y)
     if num_classes == 2:
         fpr, tpr, thresholds = roc_curve(y, pred_prob)
         auc_val = auc(fpr, tpr)

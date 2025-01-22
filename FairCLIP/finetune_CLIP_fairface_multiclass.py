@@ -64,7 +64,7 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     # the number of groups in each attribute
-    groups_in_attrs = [9, 2]
+    groups_in_attrs = [7]
 
     model_arch_mapping = {'RN50':'RN50', 'vit-b16': 'ViT-B/16', 'vit-l14': 'ViT-L/14'}
 
