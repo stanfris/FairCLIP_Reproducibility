@@ -175,13 +175,57 @@ Change the ```CHKPNT_NAME``` and ```SEED``` according to your pre-trained models
 ### Lambda Test
 In order to run the Lambda test, use the following script:
 ```bash
+DATASET_DIR=../data/Harvard-FairVLMed
+RESULT_DIR=.
+MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
+NUM_EPOCH=10
+MODALITY_TYPE='slo_fundus'
+ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
+SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
+LR=1e-5
+BATCH_SIZE=32
+BATCH_SIZE_FAIR=32
 
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_lambdas.csv
+
+for i in {0..9}; do
+    LAMBDA=$(bc -l <<< "10^(-$i)")
+    for _ in {1..3}; do
+        python3 lambda_experiment.py \
+		    --dataset_dir ${DATASET_DIR} \
+		    --result_dir ${RESULT_DIR}/results_lambda/ \
+		    --lr ${LR} \
+		    --num_epochs ${NUM_EPOCH} \
+		    --batch_size ${BATCH_SIZE} \
+		    --perf_file ${PERF_FILE} \
+		    --model_arch ${MODEL_ARCH} \
+		    --attribute ${ATTRIBUTE_TYPE} \
+		    --batchsize_fairloss ${BATCH_SIZE_FAIR} \
+		    --lambda_fairloss ${LAMBDA} \
+		    --summarized_note_file ${SUMMARIZED_NOTE_FILE}
+        wait $!
+    done
+done
 ```
 
 ### Hyperparameter Tuning
 In order to run the hyperparameter tuning, use the following script:
 ```bash
+DATASET_DIR=../data/Harvard-FairVLMed
+MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
+NUM_EPOCH=10
+MODALITY_TYPE='slo_fundus'
+SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
+BATCH_SIZE=32
+BATCH_SIZE_FAIR=32
 
+python3 ./HPO_FairerCLIP.py \
+		--dataset_dir ${DATASET_DIR} \
+                --num_epochs ${NUM_EPOCH} \
+		--batch_size ${BATCH_SIZE} \
+		--model_arch ${MODEL_ARCH} \
+		--batchsize_fairloss ${BATCH_SIZE_FAIR} \
+		--summarized_note_file ${SUMMARIZED_NOTE_FILE}
 ```
 
 ## Debugged Code
