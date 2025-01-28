@@ -16,7 +16,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch import optim
 import torch.nn.functional as F
-
 import sys
 sys.path.append('.')
 
@@ -121,8 +120,7 @@ if __name__ == '__main__':
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                                 num_workers=args.workers, pin_memory=True, drop_last=False)
 
-    test_dataset = fair_vl_med_dataset(
-        args.dataset_dir, preprocess, subset='Test')
+    test_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Test')
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                                  num_workers=args.workers, pin_memory=True, drop_last=False)
 

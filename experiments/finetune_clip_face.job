@@ -7,7 +7,7 @@
 #SBATCH --job-name=CLIP_fairface
 #SBATCH --ntasks=1
 #SBATCH --time=02:00:00
-#SBATCH --mem=120000M
+#SBATCH --mem=30000M
 #SBATCH --output=FairFace_CLIP_%A.out
 
 module purge
@@ -21,7 +21,7 @@ source activate fairclip
 cd ../FairCLIP
 
 DATASET_DIR=../data/fairface
-RESULT_DIR=../results/fairerface
+RESULT_DIR=../results/fairface_new
 MODEL_ARCH=RN50 # Options: vit-b16 | vit-l14
 NUM_EPOCH=20
 SUMMARIZED_NOTE_FILE=fairface_label_train.csv
@@ -34,9 +34,9 @@ ACCUM_ITER=1
 
 PERF_FILE=${MODEL_ARCH}_FAIRFACE_CLIP.csv
 
-python3 finetune_CLIP_fairface.py \
+srun python3 finetune_CLIP_fairface.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/CLIP2_${MODEL_ARCH} \
+		--result_dir ${RESULT_DIR}/CLIP_3_${MODEL_ARCH} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--model_arch ${MODEL_ARCH} \

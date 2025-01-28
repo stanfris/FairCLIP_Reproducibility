@@ -42,7 +42,7 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 @torch.no_grad()
-def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, normalize: bool = False, standardize: bool = True) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
+def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, normalize: bool = False, standardize: bool = False) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
     model.eval()
 
     correlations = []

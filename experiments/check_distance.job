@@ -21,6 +21,9 @@ DATASET_DIR=../data/Harvard-FairVLMed
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
+CHECKPOINT=../results/fairCLIP/language/glaucoma_FairCLIP_vit-b16_327482_seed7482_auc0.6513/clip.pth
+RESULT_DIR=../results/fairCLIP/language/glaucoma_FairCLIP_vit-b16_327482_seed7482_auc0.6513
+OUT=distances.pickle
 
-srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR}
+srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT}
 

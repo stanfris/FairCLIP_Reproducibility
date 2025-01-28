@@ -22,7 +22,7 @@ from fairlearn.metrics import *
 from natsort import natsorted
 
 class fairface_dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_dir='../../data/fairface/', preprocess=None, subset='Training', summarized_notes_file_train='fairface_label_train.csv', summarized_notes_file_val='fairface_label_val.csv', ruleout_unknown=False, group_loader=False, attribute=0, thegroup=0):
+    def __init__(self, dataset_dir='../../data/fairface/', preprocess=None, subset='Training', summarized_notes_file_train='fairface_label_train.csv', summarized_notes_file_val='fairface_label_val.csv', summarized_notes_file_test='fairface_label_test.csv', ruleout_unknown=False, group_loader=False, attribute=0, thegroup=0):
         self.age_mapping = {
             "0-2": 0,
             "3-9": 1,
@@ -52,13 +52,13 @@ class fairface_dataset(torch.utils.data.Dataset):
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
         else:
             self.dataset_dir = os.path.join(dataset_dir, 'val/')
-        self.files = natsorted(os.listdir(self.dataset_dir))[:11000]
+        self.files = natsorted(os.listdir(self.dataset_dir))[:10000]
 
         self.summarized_notes = {}
 
         # check if the split file exists
         if subset=='Training':
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:11000]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:10000]
             self.data = df
             self.dataset_dir = os.path.join(dataset_dir, 'train/')
 
@@ -72,9 +72,9 @@ class fairface_dataset(torch.utils.data.Dataset):
                     if group == thegroup:
                         tmp_files.append(file)
                 self.files = tmp_files
-        else:
+        if subset=='Validation':
             print("Loading validation")
-            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:11000]
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:10000]
             self.data = df
             if group_loader:
                 tmp_files = []
@@ -86,11 +86,21 @@ class fairface_dataset(torch.utils.data.Dataset):
                     if group == thegroup:
                         tmp_files.append(file)
                 self.files = tmp_files
+        if subset=='Test':
+            print("Loading test")
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_test)).iloc[:10000]
+            self.data = df
+            if group_loader:
+                tmp_files = []
+                for file in self.files:
+                    if attribute == 0:
+                        group = self.age_mapping.get(self.data[self.data.file == "test/" + file]["age"].item())
+                    else:
+                        group = self.race_mapping.get(self.data[self.data.file == "test/" + file]['race'].item())
+                    if group == thegroup:
+                        tmp_files.append(file)
+                self.files = tmp_files
             
-        
-
-
-
     def __len__(self):
         return len(self.files)
 

@@ -161,6 +161,11 @@ if __name__ == '__main__':
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                                 num_workers=args.workers, pin_memory=True, drop_last=False)
 
+    test_dataset = fairface_dataset(
+        args.dataset_dir, preprocess, subset='Testing', summarized_notes_file_val='fairface_label_test.csv')
+    test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
+                                    num_workers=args.workers, pin_memory=True, drop_last=False)
+
     logger.log(
         f'# of training samples: {train_dataset.__len__()}, # of testing samples: {val_dataset.__len__()}')
 
@@ -365,6 +370,102 @@ if __name__ == '__main__':
             logger.logkv(f'eval_eod_attr{ii}', round(eval_eods[ii], 4))
 
         logger.dumpkvs()
+
+    # load the best model 
+    checkpoint = torch.load(os.path.join(result_dir, "best_model.pth"))
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    # evaluate the best model on test set
+    all_probs = []
+    all_labels = []
+    all_attrs = []
+    for batch in test_dataloader:
+        images, texts, label_and_attributes = batch
+
+        images = images.to(device)
+        texts = texts.to(device)
+        combined_labels = label_and_attributes[:, 0].to(device)
+        attributes = label_and_attributes[:, 1:].to(device)
+
+        class_text_feats = []
+        with torch.no_grad():
+            image_features = model.encode_image(images)
+            image_features /= image_features.norm(dim=1, keepdim=True)
+
+            for i in range(texts.shape[1]):
+                text_features = model.encode_text(texts[:, i, :])
+                text_features /= text_features.norm(dim=1, keepdim=True)
+                class_text_feats.append(text_features[:, None, :])
+            # concatentate class_text_feats along the second dimension
+            class_text_feats = torch.cat(class_text_feats, dim=1)
+
+        vl_prob, vl_logits = compute_vl_prob(
+            image_features, class_text_feats)
+
+        all_probs.append(vl_prob[:, 1].cpu().numpy())
+        all_labels.append(combined_labels.cpu().numpy())
+        all_attrs.append(attributes.cpu().numpy())
+        # apply binary cross entropy loss
+        loss = F.binary_cross_entropy(
+            vl_prob[:, 1].float(), combined_labels.float())
+        eval_avg_loss += loss.item()
+
+        all_probs.append(vl_prob[:, 1].cpu().numpy())
+        all_labels.append(combined_labels.cpu().numpy())
+        all_attrs.append(attributes.cpu().numpy())
+
+        # apply binary cross entropy loss
+        loss = F.binary_cross_entropy(
+            vl_prob[:, 1].float(), combined_labels.float())
+        eval_avg_loss += loss.item()
+
+    all_probs = np.concatenate(all_probs, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+    all_attrs = np.concatenate(all_attrs, axis=0)
+    eval_avg_loss /= len(val_dataloader)
+
+
+
+    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
+        all_probs, all_labels, all_attrs.T)
+    
+    logger.log(
+        f'===> test acc: {overall_acc:.4f}, test auc: {overall_auc:.4f}'
+    )
+
+    logger.log(
+        f'===> test auc by groups and attributes'
+    )
+    logger.logkv('epoch', 'test')
+    logger.logkv('trn_loss', round(avg_loss, 4))
+
+    logger.logkv('eval_loss', round(eval_avg_loss, 4))
+    logger.logkv('eval_acc', round(overall_acc, 4))
+    logger.logkv('eval_auc', round(overall_auc, 4))
+
+    for ii in range(len(eval_es_acc)):
+        logger.logkv(f'eval_es_acc_attr{ii}', round(eval_es_acc[ii], 4))
+    for ii in range(len(eval_es_auc)):
+        logger.logkv(f'eval_es_auc_attr{ii}', round(eval_es_auc[ii], 4))
+    for ii in range(len(eval_aucs_by_attrs)):
+        for iii in range(len(eval_aucs_by_attrs[ii])):
+            logger.logkv(f'eval_auc_attr{ii}_group{iii}', round(
+                eval_aucs_by_attrs[ii][iii], 4))
+
+    for ii in range(len(between_group_disparity)):
+        logger.logkv(f'eval_auc_attr{ii}_std_group_disparity', round(
+            between_group_disparity[ii][0], 4))
+        logger.logkv(f'eval_auc_attr{ii}_max_group_disparity', round(
+            between_group_disparity[ii][1], 4))
+
+    for ii in range(len(eval_dpds)):
+        logger.logkv(f'eval_dpd_attr{ii}', round(eval_dpds[ii], 4))
+    for ii in range(len(eval_eods)):
+        logger.logkv(f'eval_eod_attr{ii}', round(eval_eods[ii], 4))
+
+    logger.dumpkvs()
+
 
     if args.perf_file != '':
         if os.path.exists(best_global_perf_file):
