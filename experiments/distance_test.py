@@ -120,8 +120,9 @@ if __name__ == "__main__":
         model_checkpoint = torch.load(args.checkpoint)
         model.load_state_dict(model_checkpoint['model_state_dict'])
 
-
-    distance_fn = SamplesLoss(loss="sinkhorn", p=2, blur=1e-4, diameter=2, scaling=0.95)
+    # distance_fn = SamplesLoss(loss="sinkhorn", p=2, blur=1e-4, diameter=2, scaling=0.95)
+    # changed blur to 0.1 due to the documentation
+    distance_fn = SamplesLoss(loss="gaussian", p=2, blur=0.1, diameter=2, scaling=0.95)
 
     test_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Test', present_as_training=True, summarized_note_file=args.summarized_note_file)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True, drop_last=False)
@@ -138,7 +139,7 @@ if __name__ == "__main__":
         attribute_name = IDX_TO_ATTR[attr_idx]
         group_name = IDX_TO_GROUP[attr_idx][group_idx]
         distance = distances[attr_group]
-        print(f"Atttribute: {attribute_name}, group: {group_name}, distance: {distance}")
+        print(f"Attribute: {attribute_name}, group: {group_name}, distance: {distance}")
 
 
     if args.out is not None and args.results_dir is not None:
