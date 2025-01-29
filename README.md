@@ -264,14 +264,15 @@ parser.add_argument(
 
 In order for this to work, we have altered the code for calculating the loss. We loop over all ```group_dataloader``` and take into account all dataloaders for which ```weightslist[attributeid] != 0```. The total Sinkhorn distance for the complete group is then weighted using weightslist as follows:
 ```python
-    total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+total_loss = total_loss + loss(correlations_with_batch[:, None],
+                               correlations_with_group[:, None])
 total_sinkhorn_loss += weightslist[attributeid]*total_loss
 ```
 
 This loss is then weighted by ```args.lambda_fairloss```, added to the ```total_loss```, and scaled by ```args.accum_iter```:
 ```python
 total_loss = (loss_img(logits_per_image, ground_truth) +
-	  loss_txt(logits_per_text, ground_truth))/2
+	      loss_txt(logits_per_text, ground_truth))/2
 
 total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
 
