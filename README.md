@@ -246,11 +246,10 @@ The Sinkhorn distance has been adapted from the [geomloss](https://www.kernel-op
 from geomloss import SamplesLoss
 
 loss_for_FairCLIP = SamplesLoss(loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
-loss = loss_for_FairCLIP(x, y)
-```
 
-The official implementation of FairCLIP deviates from the mathematical formulation of the Sinkhorn distance.
-The similarity scores of _a sensitive group_ $\(\mathcal{D}_{\mathcal{B}_a}\)$ are divided by their sum, before computing the distance between the distance between the batch distribution and the group distribution.
+# Given (n, 1) and (m, 1) tensors x and y, compute
+# loss = loss_for_FairCLIP(x, y)
+```
 
 ## FairCLIP+
 FairCLIP+ is our extension on FairCLIP to see what the effect is of training on multiple sensitive attributes instead of only one. These attributes can be weighted using a weightlist that can be passed as a command-line flag:
