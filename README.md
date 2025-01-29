@@ -23,6 +23,7 @@ The code in this repository has been used to research the reproducability of the
 - [Sinkhorn Distance](#sinkhorn-distance)
 - [FairCLIP+](#fairclip)
 - [Debugged Code](#debugged-code)
+- [Acknowledgements](#acknowledgements)
 
 
 ## Installation Guide
