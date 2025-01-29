@@ -53,10 +53,10 @@ The Harvard-FairVLMed dataset can be requested [here](https://drive.google.com/d
 The FairFace dataset can be downloaded [here](https://github.com/joojs/fairface)
 
 ## How to Run
-Now that the environment has been correctly installed, it is time to run the code. For each of the experiments we will provide the basic scripts needed to run the code. The scripts we used to run experiments on the snellius supercomputer can be found [here](https://github.com/stanfris/FairCLIP_Reproducibility/tree/main/experiments). These scripts can easily be turned into shell scripts to allow execution on other machines.
+Now that the environment has been correctly installed, it is time to run the code. For each of the experiments we will provide the basic scripts needed to run the code. The scripts we used to run experiments on the snellius supercomputer can be found [here](https://github.com/stanfris/FairCLIP_Reproducibility/tree/main/experiments). These scripts can easily be turned into shell scripts to allow execution on other machines (don't forget to change all paths according to your filenames and filesystem).
 
 ### Finetuning
-To run finetuning code, use the following script (don't forget to change the paths according to your filesystem):
+To run finetuning code, use the following script:
 ```bash
 DATASET_DIR=../data/Harvard-FairVLMed
 RESULT_DIR=../results/
@@ -86,7 +86,7 @@ python3 ./finetune_FairCLIP.py \
 ```
 
 ### Model Evaluation
-To run model evaluation code, use the following script (again, don't forget to change paths, especially the path to the model checkpoint):
+To run model evaluation code, use the following script:
 ```bash
 DATASET_DIR=../data/Harvard-FairVLMed
 RESULT_DIR=../results
