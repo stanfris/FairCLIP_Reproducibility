@@ -20,9 +20,9 @@ The code in this repository has been used to research the reproducability of the
   - [Linear Probing](#linear-probing)
   - [Lambda Test](#lambda-test)
   - [Hyperparameter Tuning](#hyperparameter-tuning)
-- [Debugged Code](#debugged-code)
-- [FairCLIP+](#fairclip)
 - [Sinkhorn Distance](#sinkhorn-distance)
+- [FairCLIP+](#fairclip)
+- [Debugged Code](#debugged-code)
 
 
 ## Installation Guide
@@ -228,6 +228,47 @@ python3 ./HPO_FairerCLIP.py \
 		--summarized_note_file ${SUMMARIZED_NOTE_FILE}
 ```
 
+## Sinkhorn Distance
+The Sinkhorn distance has been adapted from the [geomloss](https://www.kernel-operations.io/geomloss/) library as follows:
+```python
+from geomloss import SamplesLoss
+
+loss_for_FairCLIP = SamplesLoss(loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
+loss = loss_for_FairCLIP(x, y)
+```
+
+The official implementation of FairCLIP deviates from the mathematical formulation of the Sinkhorn distance.
+The similarity scores of _a sensitive group_ $\(\mathcal{D}_{\mathcal{B}_a}\)$ are divided by their sum, before computing the distance between the distance between the batch distribution and the group distribution.
+
+## FairCLIP+
+FairCLIP+ is our extension on FairCLIP to see what the effect is of training on multiple sensitive attributes instead of only one. These attributes can be weighted using a weightlist that can be passed as a command-line flag:
+```python
+parser.add_argument(
+  "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
+  nargs="*",  # 0 or more values expected => creates a list
+  type=float,
+  default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
+)
+```
+
+In order for this to work, we have altered the code for calculating the loss. We loop over all ```group_dataloader``` and take into account all dataloaders for which ```weightslist[attributeid] != 0```. The total Sinkhorn distance for the complete group is then weighted using weightslist as follows:
+```python
+    total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
+total_sinkhorn_loss += weightslist[attributeid]*total_loss
+```
+
+This loss is then weighted by ```args.lambda_fairloss```, added to the ```total_loss```, and scaled by ```args.accum_iter```:
+```python
+total_loss = (loss_img(logits_per_image, ground_truth) +
+	  loss_txt(logits_per_text, ground_truth))/2
+
+total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
+
+total_loss += args.lambda_fairloss * total_sinkhorn_loss
+
+total_loss /= args.accum_iter
+```
+
 ## Debugged Code
 In the original code found in the [FairCLIP Repository](https://github.com/Harvard-Ophthalmology-AI-Lab/FairCLIP) contains some bugs which we have fixed.
 
@@ -280,46 +321,4 @@ optimizer.step()
 
 Finally, we found the code to incorrectly use ```torch.backends.cudnn.deterministic``` and ```torch.backends.cudnn.benchmark```.
 In the original code, ```torch.backends.cudnn.deterministc``` is set to ```False``` which makes it hard for the experiments to be exactly reproducible. ```torch.backends.cudnn.benchmark``` was set ```True``` which we changed to ```False``` since it would otherwise overwrite ```torch.backends.cudnn.deterministic```.
-
-## FairCLIP+
-FairCLIP+ is our extension on FairCLIP to see what the effect is of training on multiple sensitive attributes instead of only one. These attributes can be weighted using a weightlist that can be passed as a command-line flag:
-```python
-parser.add_argument(
-  "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
-  nargs="*",  # 0 or more values expected => creates a list
-  type=float,
-  default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
-)
-```
-
-In order for this to work, we have altered the code for calculating the loss. We loop over all ```group_dataloader``` and take into account all dataloaders for which ```weightslist[attributeid] != 0```. The total Sinkhorn distance for the complete group is then weighted using weightslist as follows:
-```python
-    total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
-total_sinkhorn_loss += weightslist[attributeid]*total_loss
-```
-
-This loss is then weighted by ```args.lambda_fairloss```, added to the ```total_loss```, and scaled by ```args.accum_iter```:
-```python
-total_loss = (loss_img(logits_per_image, ground_truth) +
-	  loss_txt(logits_per_text, ground_truth))/2
-
-total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
-
-total_loss += args.lambda_fairloss * total_sinkhorn_loss
-
-total_loss /= args.accum_iter
-```
-
-## Sinkhorn Distance
-The Sinkhorn distance has been adapted from the [geomloss](https://www.kernel-operations.io/geomloss/) library as follows:
-```python
-from geomloss import SamplesLoss
-
-loss_for_FairCLIP = SamplesLoss(loss="sinkhorn", p=2, blur=args.sinkhorn_blur)
-loss = loss_for_FairCLIP(x, y)
-```
-
-The official implementation of FairCLIP deviates from the mathematical formulation of the Sinkhorn distance.
-The similarity scores of _a sensitive group_ $\(\mathcal{D}_{\mathcal{B}_a}\)$ are divided by their sum, before computing the distance between the distance between the batch distribution and the group distribution.
-
 
