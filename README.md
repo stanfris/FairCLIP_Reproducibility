@@ -1,6 +1,6 @@
 # \<Insert Paper Title\>
 
-Welcome to the official repository for our reproducibility research of "**FairCLIP: HArnessing Fairness in Vision-Language Learning**", an approach to tackle bias in medical data using the CLIP framework. The original FairCLIP paper introduces a method using the Sinkhorn distance in order to minimize the distance between the population distribution and the group distribution of a sensitive attribute.
+Welcome to the official repository for our reproducibility research of "**FairCLIP: Harnessing Fairness in Vision-Language Learning**", an approach to tackle bias in medical data using the CLIP framework. The original FairCLIP paper introduces a method using the Sinkhorn distance in order to minimize the distance between the population distribution and the group distribution of a sensitive attribute.
 
 The code in this repository has been used to research the reproducability of the experiments conducted in the original FairCLIP paper. Furthermore, the repository contains debugged code as well as code for our contributions. Our contributions include:
 <ul>
@@ -26,7 +26,7 @@ The code in this repository has been used to research the reproducability of the
 
 
 ## Installation Guide
-Download the repository as a .zip or clone the repository using:
+Download the repository as a ```.zip``` or clone the repository using:
 ```console
 foo@bar:~$ git clone git@github.com:stanfris/FairCLIP_Reproducibility.git 
 ```
