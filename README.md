@@ -28,7 +28,7 @@ The code in this repository has been used to research the reproducability of the
 ## Installation Guide
 Download the repository as a ```.zip``` or clone the repository using:
 ```console
-foo@bar:~$ git clone git@github.com:stanfris/FairCLIP_Reproducibility.git 
+foo@bar:~$ git clone git@github.com:stanfris/FairCLIP_Reproducibility.git
 ```
 Install the correct version of the used packages from the .yml file using the following command:
 ```console
@@ -172,6 +172,18 @@ python3 main_linprobe.py \
 ```
 Change the ```CHKPNT_NAME``` and ```SEED``` according to your pre-trained models.
 
+The results for linear probing are saved in `EXP_NAME/CHKPT_NAME.pickle`. The results can be parsed into a single csv file compatible with the output generated from the finetuning of the CLIP models, using the file `convert_linear_probing_results.py` in `src`. You can use the following example code:
+
+```bash
+BASE_DIR=../results/linear_probing
+FILES=(CLIP_FT_seed2795.pickle CLIP_FT_seed2859.pickle CLIP_FT_seed3231.pickle CLIP_seed1542.pickle CLIP_seed2859.pickle CLIP_seed3231.pickle)
+OUTPUT_FILE=../results/linear_probing/lp_results_double_check.csv
+
+python3 convert_linear_probing_results.py --base_dir ${BASE_DIR} --files ${FILES} --out ${OUTPUT_FILE}
+```
+
+
+
 ### Lambda Test
 In order to run the Lambda test, use the following script:
 ```bash
@@ -290,10 +302,10 @@ at the right places.
 
 Thirdly, the original code weighs the sinkhorn loss with a Lambda value. If this Lambda value gets too larger (>= 1e-5), the code crashes. This issue arises since the model is fp16 when training on a GPU and fp32 when training on CPU. The model can work with all lambda values by changing
 ```python
-def convert_models_to_fp32(model): 
-    for p in model.parameters(): 
-        p.data = p.data.float() 
-        p.grad.data = p.grad.data.float() 
+def convert_models_to_fp32(model):
+    for p in model.parameters():
+        p.data = p.data.float()
+        p.grad.data = p.grad.data.float()
 
 
 if device == "cpu":
@@ -301,7 +313,7 @@ if device == "cpu":
 else :
   clip.model.convert_weights(model)
 ```
-to 
+to
 ```python
 model.float()
 ```
@@ -309,12 +321,12 @@ and changing
 ```python
 if device == "cpu":
     optimizer.step()
-else : 
+else :
     convert_models_to_fp32(model)
     optimizer.step()
     clip.model.convert_weights(model)
 ```
-to 
+to
 ```python
 optimizer.step()
 ```
