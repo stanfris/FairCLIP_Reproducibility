@@ -332,5 +332,5 @@ optimizer.step()
 ```
 
 Finally, we found the code to incorrectly use ```torch.backends.cudnn.deterministic``` and ```torch.backends.cudnn.benchmark```.
-In the original code, ```torch.backends.cudnn.deterministc``` is set to ```False``` which makes it hard for the experiments to be exactly reproducible. ```torch.backends.cudnn.benchmark``` was set ```True``` which we changed to ```False``` since it would otherwise overwrite ```torch.backends.cudnn.deterministic```.
+In the original code, ```torch.backends.cudnn.deterministc``` is set to ```False``` which makes it hard for the experiments to be exactly reproducible. ```torch.backends.cudnn.benchmark``` was set to ```True``` which we changed to ```False``` since it would otherwise overwrite ```torch.backends.cudnn.deterministic```.
 
