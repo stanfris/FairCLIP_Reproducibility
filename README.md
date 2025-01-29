@@ -1,4 +1,4 @@
-# \<Insert Paper Title\>
+# On the reproducibility of "FairCLIP: Harnessing Fairness in Vision-Language Learning"
 
 Welcome to the official repository for our reproducibility research of "**FairCLIP: Harnessing Fairness in Vision-Language Learning**", an approach to tackle bias in medical data using the CLIP framework. The original FairCLIP paper introduces a method using the Sinkhorn distance in order to minimize the distance between the population distribution and the group distribution of a sensitive attribute.
 
