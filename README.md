@@ -22,7 +22,7 @@ The code in this repository has been used to research the reproducability of the
   - [Hyperparameter Tuning](#hyperparameter-tuning)
 - [Sinkhorn Distance](#sinkhorn-distance)
 - [FairCLIP+](#fairclip)
-- [Debugged Code](#debugged-code)
+- [Debugged Code (For Submission)](#debugged-code-for-submission)
 - [Acknowledgements](#acknowledgements)
 
 
@@ -282,7 +282,7 @@ total_loss += args.lambda_fairloss * total_sinkhorn_loss
 total_loss /= args.accum_iter
 ```
 
-## Debugged Code
+## Debugged Code (For Submission)
 In the original code found in the [FairCLIP Repository](https://github.com/Harvard-Ophthalmology-AI-Lab/FairCLIP) contains some bugs which we have fixed.
 
 In the original code, during training the model is evaluated on the test set, which should have been the validation set. We have fixed this by changing
