@@ -16,6 +16,7 @@ module load Anaconda3/2023.07-2
 
 # Activate your environment
 source activate fairclip
+cd ../../mae
 
 OMP_NUM_THREADS=1
 
@@ -37,7 +38,6 @@ WDECAY=0.
 SEED=2795
 
 # Run your code
-cd ../mae
 srun python3 main_linprobe.py \
             --model_type ${MODEL_TYPE} \
             --vl_feats_type ${FEATS_TYPE} \

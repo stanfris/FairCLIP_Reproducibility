@@ -4,20 +4,21 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=CLIP_fairface
+#SBATCH --job-name=CLIP_fairerface
 #SBATCH --ntasks=1
-#SBATCH --time=02:00:00
-#SBATCH --mem=32000M
-#SBATCH --output=FairFace_CLIP_%A.out
+#SBATCH --time=03:00:00
+#SBATCH --mem=120000M
+#SBATCH --output=FairerFace_CLIP_%A.out
 
 module purge
 module load 2023
 module load Anaconda3/2023.07-2
+
+# Activate your environment
 source activate fairclip
 
-
 # Run your code
-cd ../FairCLIP
+cd ../../FairCLIP
 
 DATASET_DIR=../data/fairface
 RESULT_DIR=../results/fairface
@@ -25,16 +26,23 @@ MODEL_ARCH=RN50 # Options: vit-b16 | vit-l14
 NUM_EPOCH=20
 SUMMARIZED_NOTE_FILE=fairface_label_train.csv
 LR=0.000001
-BATCH_SIZE=256
+BATCH_SIZE=128
+BATCH_SIZE_FAIR=128
+LAMBDA=1e-5
+WEIGHTS_LIST=(0 1)
+ACCUM_ITER=1
 
-PERF_FILE=${MODEL_ARCH}_FAIRFACE_CLIP.csv
+PERF_FILE=${MODEL_ARCH}_FAIRERFACE_CLIP.csv
 
-srun python3 finetune_CLIP_fairface.py \
+python3 finetune_FairerCLIP_fairface_multiclass.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/FairCLIP_${MODEL_ARCH} \
+		--result_dir ${RESULT_DIR}/FairerCLIP_${MODEL_ARCH} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
 		--summarized_note_file ${SUMMARIZED_NOTE_FILE} \
-		--num_epochs ${NUM_EPOCH} \
+		--accum_iter ${ACCUM_ITER} \
+		--batchsize_fairloss ${BATCH_SIZE_FAIR} \
+		--lambda_fairloss ${LAMBDA} \
+		--num_epochs ${NUM_EPOCH} 

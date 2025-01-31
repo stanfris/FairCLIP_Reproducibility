@@ -4,11 +4,11 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
-#SBATCH --job-name=lp_CLIP_FT_1
+#SBATCH --job-name=lp_C2795
 #SBATCH --ntasks=1
-#SBATCH --time=01:00:00
+#SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=linear_probe_test_ft_%A.out
+#SBATCH --output=lp_clip_%A.out
 
 module purge
 module load 2023
@@ -16,14 +16,14 @@ module load Anaconda3/2023.07-2
 
 # Activate your environment
 source activate fairclip
+cd ../../mae
 
 OMP_NUM_THREADS=1
 
 # directories
 DATA_DIR=../data/Harvard-FairVLMed
-PRETRAIN_CHKPT=../results/glaucoma_CLIP_vit-l14_seed9350_auc0.5812/clip_ep009.pth
-# PRETRAIN_CHKPT=ViT-L/14
-CHKPT_NAME=CLIP_FT_seed9350
+PRETRAIN_CHKPT=ViT-L/14
+CHKPT_NAME=CLIP_seed1542
 EXP_NAME=../results/linear_probing
 
 # hyperparameters
@@ -32,12 +32,12 @@ FEATS_TYPE=image # [image, multimodal]
 MODEL_TYPE=clip # [clip, blip2]
 SUMMARY_TYPE=gpt-4
 BATCH_SIZE=512
-EPOCHS=100
+EPOCHS=500
 LR=0.1
-WDECAY=0.0
+WDECAY=0.
+SEED=2795
 
 # Run your code
-cd ../mae
 srun python3 main_linprobe.py \
             --model_type ${MODEL_TYPE} \
             --vl_feats_type ${FEATS_TYPE} \
@@ -56,4 +56,5 @@ srun python3 main_linprobe.py \
             --log_dir ${EXP_NAME} \
             --nb_classes 2 \
             --blip_feats_select avgpool \
-            --cfg-path ${CFG_PATH}
+            --cfg-path ${CFG_PATH} \
+            --seed ${SEED}

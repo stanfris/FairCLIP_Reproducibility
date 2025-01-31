@@ -16,9 +16,9 @@ module load Anaconda3/2023.07-2
 
 # Activate your environment
 source activate fairclip
-pip install openai-clip
+
 # Run your code
-cd ../FairCLIP
+cd ../../FairCLIP
 DATASET_DIR=../data/Harvard-FairVLMed
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results/
