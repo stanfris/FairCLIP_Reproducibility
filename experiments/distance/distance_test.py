@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     if args.out is not None and args.results_dir is not None:
         out_path = Path(args.results_dir) / args.out
-        out_data = {"all": correlations, "groups": group_correlations}
+        out_data = {"all": correlations, "groups": group_correlations, "distances": distances}
 
         with open(out_path, "wb") as f:
             pickle.dump(out_data, f)
