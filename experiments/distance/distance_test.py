@@ -3,7 +3,7 @@ from typing import Callable, Dict, Tuple
 import argparse
 import sys
 
-sys.path.append('../FairCLIP/src')
+sys.path.append('../../FairCLIP/src')
 from modules import fair_vl_med_dataset, set_random_seed
 
 
