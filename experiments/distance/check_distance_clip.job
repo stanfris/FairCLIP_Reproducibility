@@ -23,7 +23,7 @@ BATCH_SIZE=32
 SEED=42
 CHECKPOINT=../../results/CLIP_finetuning/glaucoma_CLIP_vit-b16313_seed313_auc0.6833/clip.pth
 RESULT_DIR=../../FairCLIP
-OUT=distances_clip-ft_example_2.pickle
+OUT=distances_clip_example_2.pickle
 
-srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
+srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --out ${OUT} --results_dir ${RESULT_DIR}
 
