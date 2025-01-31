@@ -139,13 +139,15 @@ CHECKPOINT=../../results/(path to model architecture)/clip.pth
 RESULT_DIR=../../results/(path to model architecture)
 OUT=distances.pickle
 
-srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --result_dir ${RESULT_DIR}
+srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 ```
 For FairCLIP and FairCLIP+, change the model CHECKPOINT and RESULT_DIR according to where the model parameters are stored
 
 ### Linear Probing
 To run the linear probing code, use the following script:
 ```bash
+cd ../mae
+
 DATA_DIR=../data/Harvard-FairVLMed
 PRETRAIN_CHKPT=ViT-L/14
 CHKPT_NAME=CLIP_seed3231
@@ -161,7 +163,6 @@ LR=0.1
 WDECAY=0.
 SEED=3231
 
-cd ../mae
 python3 main_linprobe.py \
             --model_type ${MODEL_TYPE} \
             --vl_feats_type ${FEATS_TYPE} \

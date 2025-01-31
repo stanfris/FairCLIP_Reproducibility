@@ -6,12 +6,13 @@ experiments
 ├──distance
 |    └── contains files and code for the Sinkhorn distance analysis
 ├── evaluation
-|    └── contains files to report the accuracies of the models on the test set
+|    └── contains files to report the results of the models on the test set
 ├── fairface_dataset
-|    └── contains files to report the accuracies of the models on the test set
+|    └── contains files to report the results on the fairface dataset
 ├── finetuning_fairclip_jobs
-|    └── contains files to report the accuracies of the models on the test set
+|    └── contains files to finetune clip models with the fairclip objective
 ├── lambdatest
-|    └── contains files to report the accuracies of the models on the test set
+|    └── contains file to test the different fairness weights
 └── linear_probing
+     └── contains files used to train the linear probes
 ```
