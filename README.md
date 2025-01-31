@@ -52,6 +52,20 @@ foo@bar:~$ pip install <package>
 ### Datasets
 The Harvard-FairVLMed dataset can be requested [here](https://drive.google.com/drive/folders/1bkeifigwOAfnsLvup9mJOSNeA3WsvA2l?usp=drive_link).<br>
 The FairFace dataset can be downloaded [here](https://github.com/joojs/fairface).
+Both datasets should be located in the data folder, such that this folder has the following structure:
+```
+data
+├──Harvard-FairVLMed
+|  ├── data_summary.csv
+|  ├── gpt-4_summarized_notes.csv
+|  ├── original_notes.csv
+|  ├── Test
+|  ├── Training
+|  └── Validation
+├──fairface
+   ├── fairface_label_train.csv
+   ├── ...
+```
 
 ## How to Run
 Now that the environment has been correctly installed, it is time to run the code. For each of the experiments we will provide the basic scripts needed to run the code. The scripts we used to run experiments on the snellius supercomputer can be found [here](https://github.com/stanfris/FairCLIP_Reproducibility/tree/main/experiments). These scripts can easily be turned into shell scripts to allow execution on other machines (don't forget to change all paths according to your filenames and filesystem).
@@ -59,6 +73,8 @@ Now that the environment has been correctly installed, it is time to run the cod
 ### Finetuning
 To run finetuning code, use the following script:
 ```bash
+cd ./FairCLIP/
+
 DATASET_DIR=../data/Harvard-FairVLMed
 RESULT_DIR=../results/
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
@@ -89,6 +105,8 @@ python3 ./finetune_FairCLIP.py \
 ### Model Evaluation
 To run model evaluation code, use the following script:
 ```bash
+cd ./FairCLIP/
+
 DATASET_DIR=../data/Harvard-FairVLMed
 RESULT_DIR=../results
 MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
@@ -109,27 +127,21 @@ python3 ./evaluate_CLIP.py \
 ```
 
 ### Distance Evaluation
-To run distance evaluation code, use the following script for CLIP:
+To run distance evaluation code, use the following script for CLIP-FT:
 ```bash
-DATASET_DIR=../data/Harvard-FairVLMed
-RESULT_DIR=../results
-MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
-MODALITY_TYPE='slo_fundus'
-LR=1e-5
+cd ./experiments/distance/
+
+DATASET_DIR=../../data/Harvard-FairVLMed
+MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
-ATTRIBUTE_TYPE=ethnicity # Options: race | gender | ethnicity | language
+SEED=42
+CHECKPOINT=../../results/(path to model architecture)/clip.pth
+RESULT_DIR=../../results/(path to model architecture)
+OUT=distances.pickle
 
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairerCLIP_eval_distance.csv
-
-python3 ./evaluate_CLIP_with_distance.py \
-		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/CLIP_finetuning \
-		--lr ${LR} \
-		--perf_file ${PERF_FILE} \
-		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}313_seed313_auc0.6833/clip.pth
+srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --result_dir ${RESULT_DIR}
 ```
-For FairCLIP and FairCLIP+, change the model checkpoint and hyperparameters according to the model.
+For FairCLIP and FairCLIP+, change the model CHECKPOINT and RESULT_DIR according to where the model parameters are stored
 
 ### Linear Probing
 To run the linear probing code, use the following script:
@@ -177,7 +189,7 @@ The results for linear probing are saved in `EXP_NAME/CHKPT_NAME.pickle`. The re
 
 ```bash
 BASE_DIR=../results/linear_probing
-FILES=(CLIP_FT_seed2795.pickle CLIP_FT_seed2859.pickle CLIP_FT_seed3231.pickle CLIP_seed1542.pickle CLIP_seed2859.pickle CLIP_seed3231.pickle)
+FILES=(CLIP_FT_seed(seed 1).pickle CLIP_FT_seed2859.pickle CLIP_FT_seed(seed 2).pickle CLIP_seed(seed 3).pickle CLIP_seed(seed 4).pickle CLIP_seed(seed 5).pickle)
 OUTPUT_FILE=../results/linear_probing/lp_results_double_check.csv
 
 python3 convert_linear_probing_results.py --base_dir ${BASE_DIR} --files "${FILES[@]}" --out ${OUTPUT_FILE}
