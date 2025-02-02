@@ -96,6 +96,7 @@ class Blip2Base(BaseModel):
         return visual_encoder, ln_vision
 
     def load_from_pretrained(self, url_or_filename):
+        logging.info(f"Attempting to load pre-trained model: {url_or_filename}")
         if is_url(url_or_filename):
             cached_file = download_cached_file(
                 url_or_filename, check_hash=False, progress=True
@@ -104,7 +105,7 @@ class Blip2Base(BaseModel):
         elif os.path.isfile(url_or_filename):
             checkpoint = torch.load(url_or_filename, map_location="cpu")
         else:
-            raise RuntimeError("checkpoint url or path is invalid")
+            raise RuntimeError(f"checkpoint url or path is invalid: {url_or_filename}")
 
         state_dict = checkpoint["model"]
 

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=1
+#SBATCH --gpus=1
+#SBATCH --job-name=blip_FT
+#SBATCH --ntasks=1
+#SBATCH --time=02:00:00
+#SBATCH --mem=16000M
+#SBATCH --output=blip_ft_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+cd ../LAVIS
+
+# hyperparameters
+CFG_PATH=lavis/projects/blip2/train/pretrain_stage1_1.yaml
+
+python -m torch.distributed.run --nproc_per_node=1 --master_port=29501 train.py --cfg-path ${CFG_PATH}
+

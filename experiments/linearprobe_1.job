@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=9
+#SBATCH --gpus=1
+#SBATCH --job-name=lp_b_1
+#SBATCH --ntasks=1
+#SBATCH --time=06:30:00
+#SBATCH --mem=32000M
+#SBATCH --output=lp_b_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+cd ../mae
+
+OMP_NUM_THREADS=1
+
+# directories
+DATA_DIR=../data/Harvard-FairVLMed
+PRETRAIN_CHKPT=blip2
+CHKPT_NAME=BLIP_seed2795
+EXP_NAME=../results/linear_probing/blip2
+
+# hyperparameters
+CFG_PATH=../LAVIS/lavis/projects/blip2/train/pretrain_stage1_1.yaml
+FEATS_TYPE=image # [image, multimodal]
+MODEL_TYPE=blip2 # [clip, blip2]
+SUMMARY_TYPE=gpt-4
+BATCH_SIZE=512
+EPOCHS=500
+LR=0.1
+WDECAY=0.
+SEED=2795
+
+# Run your code
+srun python3 main_linprobe.py \
+            --model_type ${MODEL_TYPE} \
+            --vl_feats_type ${FEATS_TYPE} \
+            --vision_encoder_weights clip \
+            --summary_type ${SUMMARY_TYPE} \
+            --batch_size ${BATCH_SIZE} \
+            --model vit_large_patch16 \
+            --cls_token \
+	          --finetune ${PRETRAIN_CHKPT} \
+            --save_checkpoint_name ${CHKPT_NAME} \
+            --epochs ${EPOCHS} \
+            --blr ${LR} \
+            --weight_decay ${WDECAY} \
+            --data_path ${DATA_DIR} \
+            --output_dir ${EXP_NAME} \
+            --log_dir ${EXP_NAME} \
+            --nb_classes 2 \
+            --blip_feats_select avgpool \
+            --cfg-path ${CFG_PATH} \
+            --seed ${SEED}

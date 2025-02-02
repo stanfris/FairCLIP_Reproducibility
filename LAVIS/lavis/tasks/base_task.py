@@ -55,7 +55,7 @@ class BaseTask:
 
         for name in datasets_config:
             if name == 'fundus':
-                dataset_dir = '../FUNDUS_Dataset/FairVLMed'
+                dataset_dir = '../data/Harvard-FairVLMed'
                 subset = 'train'
                 vis_processor = Blip2ImageTrainProcessor(image_size=224, mean=None, std=None, min_scale=0.5, max_scale=1.0)
                 text_processor = BlipCaptionProcessor(prompt='', max_words=datasets_config["fundus"]["max_words"]) # default settings

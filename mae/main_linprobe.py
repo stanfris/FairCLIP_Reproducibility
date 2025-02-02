@@ -256,17 +256,21 @@ def main(args):
         model.head = torch.nn.Sequential(torch.nn.BatchNorm1d(model.head.in_features, affine=False, eps=1e-6), model.head)
 
     elif args.model_type == 'blip2':
+        load_ft_model = args.finetune != "blip2"
+
         cfg = Config(args)
-        cfg.model_cfg.pretrained = args.finetune
+        if load_ft_model:
+            cfg.model_cfg.pretrained = args.finetune
         cfg.model_cfg.vision_encoder_weights = args.vision_encoder_weights
         cfg.model_cfg.load_pretrained = True
         model = BaseTask().build_model(cfg)
-
-        checkpoint = torch.load(args.finetune, map_location="cpu")
-        msg = model.load_state_dict(checkpoint["model"], strict=False)
-        print("Missing keys {}".format(msg.missing_keys))
-        print("Number of Missing keys {}".format(len(msg.missing_keys)))
-        print("load checkpoint from %s" % args.finetune)
+        
+        if load_ft_model:
+            checkpoint = torch.load(args.finetune, map_location="cpu")
+            msg = model.load_state_dict(checkpoint["model"], strict=False)
+            print("Missing keys {}".format(msg.missing_keys))
+            print("Number of Missing keys {}".format(len(msg.missing_keys)))
+            print("load checkpoint from %s" % args.finetune)
 
         if args.blip_feats_select == 'flatten':
             model.head = torch.nn.Linear(32*768, args.nb_classes)
@@ -278,11 +282,7 @@ def main(args):
     elif args.model_type == 'clip':
         model, _ = clip.load("ViT-L/14", device="cpu")
         if args.finetune != "ViT-L/14":
-            # temporary fix, because checkpoints are saved differently
-            if args.save_checkpoint_name == "CLIP_seed1542":
-                model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model"])
-            else:
-                model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model_state_dict"])
+            model.load_state_dict(torch.load(args.finetune, map_location="cpu")["model_state_dict"])
         if args.vl_feats_type == 'image':
             model.head = torch.nn.Linear(768, args.nb_classes)
         elif args.vl_feats_type == 'multimodal':
