@@ -7,8 +7,8 @@
 #SBATCH --job-name=lp_b_f_3
 #SBATCH --ntasks=1
 #SBATCH --time=06:30:00
-#SBATCH --mem=20000M
-#SBATCH --output=lp_clip_ft_%A.out
+#SBATCH --mem=32000M
+#SBATCH --output=lp_b_f_%A.out
 
 module purge
 module load 2023
