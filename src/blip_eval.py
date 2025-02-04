@@ -18,7 +18,7 @@ from lavis.processors.blip_processors import BlipImageEvalProcessor, BlipCaption
 
 import sys
 sys.path.append('../FairCLIP/src')
-from modules import evalute_comprehensive_perf
+from modules import evaluate_comprehensive_perf
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training")
@@ -116,7 +116,7 @@ def zero_shot_blip(args):
     all_labels = torch.stack(all_labels).numpy()
     all_attrs = torch.stack(all_attrs).numpy()
 
-    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(all_probs, all_labels, all_attrs.T)
+    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(all_probs, all_labels, all_attrs.T)
     
     test_stats = {
         'overall_acc': overall_acc,
@@ -208,7 +208,7 @@ def linear_probe_blip(args):
     accuracy = np.mean((test_labels == predictions).astype(float)) * 100.
     print(f"Accuracy = {accuracy:.3f}")
 
-    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(classifier.predict_proba(test_features)[:,1], test_labels, test_attrs.T)
+    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(classifier.predict_proba(test_features)[:,1], test_labels, test_attrs.T)
     
     test_stats = {
         'overall_acc': overall_acc,

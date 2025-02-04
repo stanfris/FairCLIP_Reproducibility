@@ -24,7 +24,7 @@ import numpy as np
 
 import sys
 sys.path.append('../FairCLIP/src')
-from modules import evalute_comprehensive_perf
+from modules import evaluate_comprehensive_perf
 
 import clip
 
@@ -190,7 +190,7 @@ def evaluate(data_loader, model, device, args):
     all_labels = np.concatenate(all_labels, axis=0)
     all_attrs = np.concatenate(all_attrs, axis=0)
 
-    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evalute_comprehensive_perf(all_probs, all_labels, all_attrs.T)
+    overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(all_probs, all_labels, all_attrs.T)
 
     test_stats = {
         'overall_acc': overall_acc,

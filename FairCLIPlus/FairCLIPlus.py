@@ -223,7 +223,7 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
 
         overall_acc, eval_es_acc, overall_auc, eval_es_auc, \
             eval_aucs_by_attrs, eval_dpds, eval_eods, \
-                between_group_disparity = evalute_comprehensive_perf(
+                between_group_disparity = evaluate_comprehensive_perf(
                                             all_probs, all_labels, all_attrs.T)
 
         if best_auc <= overall_auc:

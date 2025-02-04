@@ -292,33 +292,6 @@ def multiclass_equalized_odds(pred_prob, y, attrs):
         
     return avg_score
 
-def multiclass_demographic_parity_(pred_prob, y, attrs):
-
-    if torch.is_tensor(pred_prob):
-        pred_prob = pred_prob.detach().cpu().numpy()
-    if torch.is_tensor(y):
-        y = y.detach().cpu().numpy()
-
-    attrs_set = np.unique(attrs)
-    y_pred = np.argmax(pred_prob, axis=1)
-
-    mc_dpd = 0
-    for i in range(pred_prob.shape[1]):
-        tmp_preds = (y_pred==i).astype(int)
-        tmp_not_preds = 1 - tmp_preds
-
-        dp_by_attrs = []
-        for j in attrs_set:
-            idx = attrs==j
-            tmp = np.abs(tmp_preds.mean().item() - tmp_preds[idx].mean().item()) + np.abs(tmp_not_preds.mean().item() - tmp_not_preds[idx].mean().item())
-            dp_by_attrs.append(tmp)
-            print(tmp)
-        mc_dpd += np.mean(dp_by_attrs).item()
-
-    mc_dpd = mc_dpd / pred_prob.shape[1]
-        
-    return mc_dpd
-
 def auc_score_multiclass(pred_prob, y, num_of_class=3, eps=0.01):
     if torch.is_tensor(pred_prob):
         pred_prob = pred_prob.detach().cpu().numpy()
@@ -403,62 +376,13 @@ def equity_scaled_AUC(output, target, attrs, alpha=1., num_classes=2):
 
     return es_auc
 
-def evaluate_perf_by_attr(preds, gts, attrs=None, num_classes=2):
-
-    esaccs_by_attrs = []
-    esaucs_by_attrs = []
-    aucs_by_attrs = []
-    dpds = []
-    dprs = []
-    eods = []
-    eors = []
-    for i in range(attrs.shape[0]):
-        attr = attrs[i,:]
-
-        es_acc = equity_scaled_accuracy(preds, gts, attr)
-        esaccs_by_attrs.append(es_acc)
-        es_auc = equity_scaled_AUC(preds, gts, attr, num_classes=num_classes)
-        esaucs_by_attrs.append(es_auc)
-
-        aucs_by_group = []
-        elements = np.unique(attr).astype(int)
-        for e in elements:
-            aucs_by_group.append( compute_auc(preds[attr == e], gts[attr == e], num_classes=num_classes) )
-        aucs_by_attrs.append(aucs_by_group)
-        pred_labels = (preds >= 0.5).astype(float)
-        if num_classes == 2:
-            dpd = demographic_parity_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            dpr = demographic_parity_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eor = equalized_odds_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-        elif num_classes > 2:
-            dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
-            eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
-
-        dpds.append(dpd)
-        eods.append(eod)
-
-    return esaccs_by_attrs, esaucs_by_attrs, aucs_by_attrs, dpds, eods
-
 
 def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
     esaccs_by_attrs = []
     esaucs_by_attrs = []
     aucs_by_attrs = []
     dpds = []
-    dprs = []
     eods = []
-    eors = []
     between_group_disparity = []
 
     overall_acc = accuracy(preds, gts, topk=(1,))
@@ -490,9 +414,7 @@ def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
                                         sensitive_features=attr)
         elif num_classes > 2:
             dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
             eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
 
         dpds.append(dpd)
         eods.append(eod)

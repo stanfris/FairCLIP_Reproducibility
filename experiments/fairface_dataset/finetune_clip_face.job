@@ -16,7 +16,6 @@ module load Anaconda3/2023.07-2
 
 # Activate your environment
 source activate fairclip
-
 # Run your code
 cd ../../FairCLIP
 
