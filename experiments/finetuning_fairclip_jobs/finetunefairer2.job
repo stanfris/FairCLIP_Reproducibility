@@ -23,7 +23,7 @@ cd ../../FairCLIPlus
 DATASET_DIR=../data/Harvard-FairVLMed
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results/
-MODEL_ARCH=vit-l14 # Options: vit-b16 | vit-l14
+MODEL_ARCH=ViT-L/14 # Options: vit-b16 | vit-l14
 NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language

@@ -132,6 +132,8 @@ if __name__ == '__main__':
 
     fair_clip_plus = FairCLIPlus(attributes_weights, args.model_arch, device, loss_img, loss_txt,
                                 loss_for_FairCLIP, args.lambda_fairloss, args.pretrained_weights)
+    fair_clip_plus = fair_clip_plus.to(device)
+
     optimizer = optim.Adam(fair_clip_plus.parameters(), lr=args.lr, betas=(0.1, 0.1),
                            eps=1e-6, weight_decay=args.weight_decay)
     start_epoch = 0
