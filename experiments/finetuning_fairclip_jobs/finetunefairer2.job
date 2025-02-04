@@ -23,7 +23,8 @@ cd ../../FairCLIPlus
 DATASET_DIR=../data/Harvard-FairVLMed
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results/
-MODEL_ARCH=ViT-L/14 # Options: vit-b16 | vit-l14
+MODEL_ARCH_NAME=vit-l14 # Options: vit-b16 | vit-l14
+MODEL_ARCH=ViT-L/14
 NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
@@ -32,11 +33,11 @@ LR=1e-5
 BATCH_SIZE=32
 LAMBDA=1e-5
 BATCH_SIZE_FAIR=32
-PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
+PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
 
 python3 ./finetune_fairclip_plus_harvardvlmed.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}run_anew/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}run_anew/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
