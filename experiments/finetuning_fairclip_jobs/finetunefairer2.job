@@ -36,7 +36,7 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
 
 python3 ./finetune_fairclip_plus_harvardvlmed.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/run_anew/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}run_anew/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
