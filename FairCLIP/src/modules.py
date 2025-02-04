@@ -125,21 +125,11 @@ class fair_vl_med_dataset(torch.utils.data.Dataset):
         slo_fundus = self.preprocess(Image.fromarray(slo_fundus))
 
         if self.subset == 'Training' or self.present_as_training:
-            if self.text_source == 'note':
+            note = self.summarized_notes[self.files[idx]].strip()
 
-                note = self.summarized_notes[self.files[idx]].strip()
-
-                note = truncate_note(note)
-                token = clip.tokenize(note)
-                token = token.squeeze()
-            elif self.text_source == 'label':
-                glaucoma_label = int(data['glaucoma'].item())
-                if glaucoma_label == 1:
-                    note = 'A photo of glaucoma'
-                else:
-                    note = 'A photo of non-glaucoma'
-                token = clip.tokenize(note)
-                token = token.squeeze()
+            note = truncate_note(note)
+            token = clip.tokenize(note)
+            token = token.squeeze()
         else:
             note = 'A photo of non-glaucoma'
             neg_token = clip.tokenize(note)
