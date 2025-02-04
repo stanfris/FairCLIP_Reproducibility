@@ -45,11 +45,13 @@ class FairCLIPlus(torch.nn.Module):
 
         # Load the specified CLIP model
         self.model, self.preprocess = clip.load(model_architecture, device)
+        self.model.float()
 
         # Load pretrained weights if provided
         if pretrained_weights:
             checkpoint = torch.load(pretrained_weights)
             self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.model.float()
 
     def forward(self, images, texts):
         """
