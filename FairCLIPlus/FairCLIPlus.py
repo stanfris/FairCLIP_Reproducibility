@@ -180,6 +180,9 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
         for batch in batch_dataset_val:
             images, texts, label_and_attributes = batch
 
+            images = images.to(model.device)
+            texts = texts.to(model.device)
+
             labels = label_and_attributes[:, 0].to(model.device)
             attributes = label_and_attributes[:, 1:].to(model.device)
 
