@@ -160,10 +160,10 @@ if __name__ == '__main__':
                                  num_workers=args.workers, pin_memory=True, drop_last=False)
 
     all_attribute_dataloaders = dict()
-    for attr_index, attr in enumerate(args.groups_per_attr):
+    for attr_index, attr in enumerate(args.attributeslist):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
         group_dataloaders = dict()
-        for group_idx in range(args.group):
+        for group_idx in range(args.groups_per_attr[attr_index]):
             tmp_dataset = fair_vl_group_dataset(args.dataset_dir, fair_clip_plus.preprocess,
                                                 text_source='note', summarized_note_file=args.summarized_note_file,
                                                 attribute=attr, thegroup=group_idx)
