@@ -252,7 +252,6 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
             logger.log(best_auc_groups)
 
             logger.logkv('epoch', epoch)
-            logger.logkv('trn_loss', round(avg_loss, 4))
 
             logger.logkv('eval_loss', round(eval_avg_loss, 4))
             logger.logkv('eval_acc', round(overall_acc, 4))
