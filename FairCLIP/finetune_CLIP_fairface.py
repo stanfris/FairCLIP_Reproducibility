@@ -1,5 +1,5 @@
 from src import logger
-from src.modules_new_data import *
+from src.modules import *
 import os
 import numpy as np
 import random

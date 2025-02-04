@@ -24,6 +24,8 @@ import torch.nn.functional as F
 from sklearn.metrics import *
 from fairlearn.metrics import *
 
+from natsort import natsorted
+
 def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)

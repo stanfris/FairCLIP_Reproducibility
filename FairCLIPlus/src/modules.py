@@ -24,6 +24,8 @@ import torch.nn.functional as F
 from sklearn.metrics import *
 from fairlearn.metrics import *
 
+from natsort import natsorted
+
 def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -36,22 +38,6 @@ def set_random_seed(seed):
 def find_all_files(folder, suffix='npz'):
     files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and os.path.join(folder, f).endswith(suffix)]
     return files
-
-class TextCLIP(nn.Module):
-    def __init__(self, model) :
-        super(TextCLIP, self).__init__()
-        self.model = model
-        
-    def forward(self,text):
-        return self.model.encode_text(text)
-    
-class ImageCLIP(nn.Module):
-    def __init__(self, model) :
-        super(ImageCLIP, self).__init__()
-        self.model = model
-        
-    def forward(self,image):
-        return self.model.encode_image(image)
 
 def truncate_note(note, max_length=180):
 
@@ -77,7 +63,6 @@ def count_number_of_groups(input_dataset):
     _, numbers_of_gender = np.unique(instances_on_gender, return_counts=True)
     _, numbers_of_ethnicity = np.unique(instances_on_ethnicity, return_counts=True)
     return numbers_of_race, numbers_of_gender, numbers_of_ethnicity
-
 
 class fair_vl_med_dataset(torch.utils.data.Dataset):
     def __init__(self, dataset_dir='', preprocess=None, files=None, subset='Training', text_source='note', summarized_note_file=None, ruleout_unknown=False, present_as_training=False):
@@ -125,21 +110,11 @@ class fair_vl_med_dataset(torch.utils.data.Dataset):
         slo_fundus = self.preprocess(Image.fromarray(slo_fundus))
 
         if self.subset == 'Training' or self.present_as_training:
-            if self.text_source == 'note':
+            note = self.summarized_notes[self.files[idx]].strip()
 
-                note = self.summarized_notes[self.files[idx]].strip()
-
-                note = truncate_note(note)
-                token = clip.tokenize(note)
-                token = token.squeeze()
-            elif self.text_source == 'label':
-                glaucoma_label = int(data['glaucoma'].item())
-                if glaucoma_label == 1:
-                    note = 'A photo of glaucoma'
-                else:
-                    note = 'A photo of non-glaucoma'
-                token = clip.tokenize(note)
-                token = token.squeeze()
+            note = truncate_note(note)
+            token = clip.tokenize(note)
+            token = token.squeeze()
         else:
             note = 'A photo of non-glaucoma'
             neg_token = clip.tokenize(note)
@@ -263,69 +238,122 @@ class fair_vl_group_dataset(torch.utils.data.Dataset):
         if self.return_idx:
             return slo_fundus, token, label_and_attributes, self.files[idx]
         return slo_fundus, token, label_and_attributes
+    
+class fairface_dataset(torch.utils.data.Dataset):
+    def __init__(self, dataset_dir='../../data/fairface/', preprocess=None, subset='Training', summarized_notes_file_train='fairface_label_train.csv', summarized_notes_file_val='fairface_label_val.csv', summarized_notes_file_test='fairface_label_test.csv', ruleout_unknown=False, group_loader=False, attribute=0, thegroup=0):
+        self.age_mapping = {
+            "0-2": 0,
+            "3-9": 1,
+            "10-19": 2,
+            "20-29": 3,
+            "30-39": 4,
+            "40-49": 5,
+            "50-59": 6,
+            "60-69": 7,
+            "more than 70": 8
+        }
+        self.race_mapping = {
+            "East Asian": 0,
+            "Indian": 1,
+            "Black": 2,
+            "White": 3,
+            "Middle Eastern": 4,
+            "Southeast Asian": 5,
+            "Latino_Hispanic": 6
+        }
+        self.age_mapping_inv = {v: k for k, v in self.age_mapping.items()}
+        self.race_mapping_inv = {v: k for k, v in self.race_mapping.items()}
+        self.preprocess = preprocess
+        self.subset = subset
+        self.ruleout_unknown = ruleout_unknown
+        if subset=='Training':
+            self.dataset_dir = os.path.join(dataset_dir, 'train/')
+        else:
+            self.dataset_dir = os.path.join(dataset_dir, 'val/')
+        self.files = natsorted(os.listdir(self.dataset_dir))[:10000]
+
+        self.summarized_notes = {}
+
+        # check if the split file exists
+        if subset=='Training':
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_train)).iloc[:10000]
+            self.data = df
+            self.dataset_dir = os.path.join(dataset_dir, 'train/')
+
+            if group_loader:
+                tmp_files = []
+                for file in self.files:
+                    if attribute == 'age':
+                        group = self.age_mapping.get(self.data[self.data.file == "train/" + file]["age"].item())
+                    else:
+                        group = self.race_mapping.get(self.data[self.data.file == "train/" + file]["race"].item())
+                    if group == thegroup:
+                        tmp_files.append(file)
+                self.files = tmp_files
+        if subset=='Validation':
+            print("Loading validation")
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_val)).iloc[:10000]
+            self.data = df
+            if group_loader:
+                tmp_files = []
+                for file in self.files:
+                    if attribute == 0:
+                        group = self.age_mapping.get(self.data[self.data.file == "val/" + file]["age"].item())
+                    else:
+                        group = self.race_mapping.get(self.data[self.data.file == "val/" + file]["race"].item())
+                    if group == thegroup:
+                        tmp_files.append(file)
+                self.files = tmp_files
+        if subset=='Test':
+            print("Loading test")
+            df = pd.read_csv(os.path.join(dataset_dir, summarized_notes_file_test)).iloc[:10000]
+            self.data = df
+            if group_loader:
+                tmp_files = []
+                for file in self.files:
+                    if attribute == 0:
+                        group = self.age_mapping.get(self.data[self.data.file == "test/" + file]["age"].item())
+                    else:
+                        group = self.race_mapping.get(self.data[self.data.file == "test/" + file]['race'].item())
+                    if group == thegroup:
+                        tmp_files.append(file)
+                self.files = tmp_files
+            
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        image_path = os.path.join(self.dataset_dir, self.files[idx])
+        img = Image.open(image_path)
+        final_image = self.preprocess(img)
+        row = self.data.loc[idx].to_dict()
+        gender_label = int(row['gender'] == 'Male')
+        if self.subset == 'Training':
+            note = "Image of a person that is " + row['age']+ " years old, and their race is: " + row['race'] + "They are " + row['gender']
+            token = clip.tokenize(note)
+            token = token.squeeze()
+        else:
+            pos_note = 'A picture of a male person'
+            neg_note = 'A picture of a female person'
+            neg_token = clip.tokenize(neg_note)
+            pos_token = clip.tokenize(pos_note)
+
+            # concatenate two tensors together, the final tensor will be at size of 2, 77
+            token = torch.cat((neg_token, pos_token), dim=0)
+        # extract labels from df
+        
+
+        age_label = int(self.age_mapping.get(row["age"]))
+        race_label = int(self.race_mapping.get(row["race"]))
+        
+        label_and_attributes = torch.tensor([gender_label, age_label, race_label])
+
+        return final_image, token, label_and_attributes
 
 def endless_loader(dataloader):
     while True:
         for data in dataloader:
             yield data
-
-class image_title_dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_dir='', preprocess=None, files=None, subset='train'):
-        self.preprocess = preprocess
-        self.files = files
-        self.dataset_dir = dataset_dir
-        self.subset = subset
-
-    def __len__(self):
-        return len(self.files)
-
-    def __getitem__(self, idx):
-        npz_path = os.path.join(self.dataset_dir, self.files[idx])
-        data = np.load(npz_path)
-        slo_fundus = data['slo_fundus'].astype(np.float32)
-        slo_fundus = self.preprocess(Image.fromarray(slo_fundus))
-
-        if self.subset == 'train':
-            note = truncate_note(data['note'].item().strip())
-            token = clip.tokenize(note)
-            token = token.squeeze()
-        else:
-            note = 'A photo of non-glaucoma'
-            neg_token = clip.tokenize(note)
-
-            note = 'A photo of glaucoma'
-            pos_token = clip.tokenize(note)
-
-            # concatenate two tensors together, the final tensor will be at size of 2, 77
-            token = torch.cat((neg_token, pos_token), dim=0)
-
-        # extract glaucoma label from npz file
-        glaucoma_label = int(data['glaucoma'].item())
-        race = int(data['race'].item())
-        gender = int(data['gender'].item())
-        hispanic = int(data['hispanic'].item())
-        # merge all labels together into a single tensor at size of 4
-        label_and_attributes = torch.tensor([glaucoma_label, race, gender, hispanic])
-
-
-        return slo_fundus, token, label_and_attributes
-
-class Adversary_Net(nn.Module):
-
-    def __init__(self, n_sensitive, n_hidden=32):
-        super(Adversary_Net, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(n_hidden, 16),
-            nn.ReLU(),
-            nn.Linear(16, 32),
-            nn.ReLU(),
-            nn.Linear(32, 64),
-            nn.ReLU(),
-            nn.Linear(64, n_sensitive),
-        )
-
-    def forward(self, x):
-        return self.network(x)
 
 def compute_vl_prob(img_feats, class_txt_feats):
     # img_feats: [batch_size, 512]
@@ -391,7 +419,7 @@ def compute_auc(pred_prob, y, num_classes=2):
         y = y.detach().cpu().numpy()
 
     if num_classes == 2:
-        fpr, tpr, thresholds = roc_curve(y, pred_prob)
+        fpr, tpr, _ = roc_curve(y, pred_prob)
         auc_val = auc(fpr, tpr)
     elif num_classes > 2:
         y_onehot = num_to_onehot(y, num_classes)
@@ -408,7 +436,7 @@ def auc_score(pred_prob, y):
     if np.unique(y).shape[0]>2:
         AUC = roc_auc_score(y, pred_prob, multi_class='ovr')
     else:
-        fpr, tpr, thresholds = roc_curve(y, pred_prob)
+        fpr, tpr, _ = roc_curve(y, pred_prob)
         AUC = auc(fpr, tpr)
     
     return AUC
@@ -476,33 +504,6 @@ def multiclass_equalized_odds(pred_prob, y, attrs):
         
     return avg_score
 
-def multiclass_demographic_parity_(pred_prob, y, attrs):
-
-    if torch.is_tensor(pred_prob):
-        pred_prob = pred_prob.detach().cpu().numpy()
-    if torch.is_tensor(y):
-        y = y.detach().cpu().numpy()
-
-    attrs_set = np.unique(attrs)
-    y_pred = np.argmax(pred_prob, axis=1)
-
-    mc_dpd = 0
-    for i in range(pred_prob.shape[1]):
-        tmp_preds = (y_pred==i).astype(int)
-        tmp_not_preds = 1 - tmp_preds
-
-        dp_by_attrs = []
-        for j in attrs_set:
-            idx = attrs==j
-            tmp = np.abs(tmp_preds.mean().item() - tmp_preds[idx].mean().item()) + np.abs(tmp_not_preds.mean().item() - tmp_not_preds[idx].mean().item())
-            dp_by_attrs.append(tmp)
-            print(tmp)
-        mc_dpd += np.mean(dp_by_attrs).item()
-
-    mc_dpd = mc_dpd / pred_prob.shape[1]
-        
-    return mc_dpd
-
 def auc_score_multiclass(pred_prob, y, num_of_class=3, eps=0.01):
     if torch.is_tensor(pred_prob):
         pred_prob = pred_prob.detach().cpu().numpy()
@@ -511,7 +512,8 @@ def auc_score_multiclass(pred_prob, y, num_of_class=3, eps=0.01):
 
     sensitivity_at_diff_specificity = [-1]*4
     y_onehot = num_to_onehot(y, num_of_class)
-    fpr, tpr, thresholds = roc_curve(y_onehot.ravel(), pred_prob.ravel())
+    fpr, tpr, _ = roc_curve(y_onehot.ravel(), pred_prob.ravel())
+    
     for i in range(len(fpr)):
         cur_fpr = fpr[i]
         cur_tpr = tpr[i]
@@ -529,13 +531,16 @@ def auc_score_multiclass(pred_prob, y, num_of_class=3, eps=0.01):
 
 def equity_scaled_accuracy(output, target, attrs, alpha=1.):
     es_acc = 0
+    
     if len(output.shape) >= 2:
         overall_acc = np.sum(np.argmax(output, axis=1) == target)/target.shape[0]
     else:
         overall_acc = np.sum((output >= 0.5).astype(float) == target)/target.shape[0]
+        
     tmp = 0
     identity_wise_perf = []
     identity_wise_num = []
+    
     for one_attr in np.unique(attrs).astype(int):
         pred_group = output[attrs == one_attr]
         gt_group = target[attrs == one_attr]
@@ -561,7 +566,7 @@ def equity_scaled_AUC(output, target, attrs, alpha=1., num_classes=2):
     identity_wise_num = []
     
     if num_classes == 2:
-        fpr, tpr, thresholds = roc_curve(target, output)
+        fpr, tpr, _ = roc_curve(target, output)
         overall_auc = auc(fpr, tpr)
     elif num_classes > 2:
         y_onehot = num_to_onehot(target, num_classes)
@@ -572,7 +577,7 @@ def equity_scaled_AUC(output, target, attrs, alpha=1., num_classes=2):
         gt_group = target[attrs == one_attr]
 
         if num_classes == 2:
-            fpr, tpr, thresholds = roc_curve(gt_group, pred_group)
+            fpr, tpr, _ = roc_curve(gt_group, pred_group)
             group_auc = auc(fpr, tpr)
         elif num_classes > 2:
             y_onehot = num_to_onehot(gt_group, num_classes)
@@ -593,9 +598,7 @@ def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
     esaucs_by_attrs = []
     aucs_by_attrs = []
     dpds = []
-    dprs = []
     eods = []
-    eors = []
     between_group_disparity = []
 
     overall_acc = accuracy(preds, gts, topk=(1,))
@@ -622,20 +625,12 @@ def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
             dpd = demographic_parity_difference(gts,
                                         pred_labels,
                                         sensitive_features=attr)
-            dpr = demographic_parity_ratio(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
             eod = equalized_odds_difference(gts,
-                                        pred_labels,
-                                        sensitive_features=attr)
-            eor = equalized_odds_ratio(gts,
                                         pred_labels,
                                         sensitive_features=attr)
         elif num_classes > 2:
             dpd = multiclass_demographic_parity(preds, gts, attr)
-            dpr = 0
             eod = multiclass_equalized_odds(preds, gts, attr)
-            eor = 0
 
         dpds.append(dpd)
         eods.append(eod)
@@ -644,6 +639,3 @@ def evaluate_comprehensive_perf(preds, gts, attrs=None, num_classes=2):
 
 def compute_between_group_disparity(auc_list, overall_auc):
     return np.std(auc_list) / overall_auc, (np.max(auc_list)-np.min(auc_list)) / overall_auc
-
-def compute_between_group_disparity_half(auc_list, overall_auc):
-    return np.std(auc_list) / np.abs(overall_auc-0.5), (np.max(auc_list)-np.min(auc_list)) / np.abs(overall_auc-0.5)
