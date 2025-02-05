@@ -18,10 +18,10 @@ module load Anaconda3/2023.07-2
 source activate fairclip
 
 DATASET_DIR=../../data/Harvard-FairVLMed
-MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
+MODEL_ARCH=vit-l14 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
-CHECKPOINT=../../results/CLIP_finetuning/glaucoma_CLIP_vit-b16313_seed313_auc0.6833/clip.pth
+CHECKPOINT=../../results/run_anew/FairerCLIP/glaucoma_FairerCLIP_vit-l14_32_1e-5_1e-54129/clip.pth
 RESULT_DIR=../../FairCLIP
 OUT=distances_clip-ft_example_2.pickle
 
