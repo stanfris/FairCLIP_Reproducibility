@@ -172,7 +172,7 @@ def train_model(model: FairCLIPlus, batch_dataset_train: DataLoader,
                 logits_per_attr[attribute_name] = logits_per_group
 
             loss = model.fairCLIPlus_loss(logits_per_image, logits_per_text, logits_per_attr)
-            avg_train_loss += loss
+            avg_train_loss += loss.item()
 
             loss.backward()
             model.optimizer.step()
