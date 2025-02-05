@@ -131,17 +131,8 @@ if __name__ == '__main__':
         attributes_weights[attr] = args.weightslist[i]
 
     fair_clip_plus = FairCLIPlus(attributes_weights, args.model_arch, device, loss_img, loss_txt,
-                                loss_for_FairCLIP, args.lambda_fairloss, args.pretrained_weights)
+                                loss_for_FairCLIP, args.lr, args.weight_decay, args.lambda_fairloss, args.pretrained_weights)
     fair_clip_plus = fair_clip_plus.to(device)
-
-    optimizer = optim.Adam(fair_clip_plus.parameters(), lr=args.lr, betas=(0.1, 0.1),
-                           eps=1e-6, weight_decay=args.weight_decay)
-    start_epoch = 0
-    if args.pretrained_weights != "":
-        checkpoint = torch.load(args.pretrained_weights)
-
-        start_epoch = checkpoint['epoch'] + 1
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     # Loading data
     train_dataset = fair_vl_med_dataset(args.dataset_dir, fair_clip_plus.preprocess, subset='Training',
@@ -174,10 +165,9 @@ if __name__ == '__main__':
 
     best_auc, best_acc, best_ep, best_auc_groups, best_dpd_groups, \
             best_eod_groups, best_es_acc, best_es_auc, \
-            best_between_group_disparity = train_model(fair_clip_plus, optimizer,
+            best_between_group_disparity = train_model(fair_clip_plus,
                                                        train_dataloader, val_dataloader,
-                                                       all_attribute_dataloaders, result_dir,
-                                                       start_epoch=start_epoch)
+                                                       all_attribute_dataloaders, result_dir)
 
     # Log to corresponding file
     if args.perf_file != '':

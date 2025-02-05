@@ -2,6 +2,7 @@ from typing import Literal
 import torch
 import clip
 from torch.utils.data import DataLoader
+from torch import optim
 from src.modules import *
 from src import logger
 
@@ -16,6 +17,8 @@ class FairCLIPlus(torch.nn.Module):
                  loss_img: callable,
                  loss_txt: callable,
                  distance_loss: callable,
+                 lr: float,
+                 weight_decay: float,
                  fairness_weight: float,
                  pretrained_weights: str = ""):
         """
@@ -37,6 +40,7 @@ class FairCLIPlus(torch.nn.Module):
         self.device = device
         self.attributes = attributes
         self.fairness_weight = fairness_weight
+        self.start_epoch = 0
 
         # Defining losses for the fairCLIP objective
         self.loss_img = loss_img
@@ -47,11 +51,16 @@ class FairCLIPlus(torch.nn.Module):
         self.model, self.preprocess = clip.load(model_architecture, device)
         self.model.float()
 
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, betas=(0.1, 0.1),
+                           eps=1e-6, weight_decay=weight_decay)
+
         # Load pretrained weights if provided
         if pretrained_weights:
             checkpoint = torch.load(pretrained_weights)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.float()
+            self.start_epoch = checkpoint['epoch'] + 1
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def forward(self, images, texts):
         """
@@ -114,10 +123,10 @@ class FairCLIPlus(torch.nn.Module):
         return total_loss
 
 
-def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
+def train_model(model: FairCLIPlus, batch_dataset_train: DataLoader,
                 batch_dataset_val: DataLoader, attribute_group_dl: dict[str, dict[int, DataLoader]],
                 result_dir: str, output_model_name:str = "clip.pth", epochs: int = 10,
-                verbose: bool = True, start_epoch: int = 0):
+                verbose: bool = True):
     """
     TODO
     """
@@ -131,15 +140,16 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
     best_es_acc = 0
     best_es_auc = 0
     best_between_group_disparity = 0
-    for epoch in range(start_epoch, epochs):
+    for epoch in range(model.start_epoch, epochs):
         model.train()
         # sanity check
         if not model.model.training:
             raise Exception("Internal CLIP model still in evaluation mode")
 
         # train loop
+        avg_train_loss = 0
         for batch in batch_dataset_train:
-            optimizer.zero_grad()
+            model.optimizer.zero_grad()
 
             images, texts, _ = batch
 
@@ -162,9 +172,11 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
                 logits_per_attr[attribute_name] = logits_per_group
 
             loss = model.fairCLIPlus_loss(logits_per_image, logits_per_text, logits_per_attr)
+            avg_train_loss += loss
 
             loss.backward()
-            optimizer.step()
+            model.optimizer.step()
+        avg_train_loss /= len(batch_dataset_train)
 
         # Eval loop
         model.eval()
@@ -240,7 +252,7 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
+                'optimizer_state_dict': model.optimizer.state_dict(),
                 'loss': eval_avg_loss,
             }, os.path.join(result_dir, output_model_name))
 
@@ -259,6 +271,7 @@ def train_model(model: FairCLIPlus, optimizer, batch_dataset_train: DataLoader,
             logger.logkv('epoch', epoch)
 
             logger.logkv('eval_loss', round(eval_avg_loss, 4))
+            logger.logkv('train_loss', round(avg_train_loss, 4))
             logger.logkv('eval_acc', round(overall_acc, 4))
             logger.logkv('eval_auc', round(overall_auc, 4))
 
