@@ -1,24 +1,34 @@
-import torch.utils
-from src import logger
-from src.modules import *
+import sys
 import os
-import numpy as np
 import random
 import argparse
-import json
-import pandas as pd
-from geomloss import SamplesLoss
 
-import clip
+import json
+
+import numpy as np
+import pandas as pd
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils
 from torch.utils.data import DataLoader
 from torch import optim
-import torch.nn.functional as F
 
-import sys
-sys.path.append('.')
+import clip
+
+from geomloss import SamplesLoss
+
+from src import logger
+from src.modules import (
+    count_number_of_groups,
+    compute_vl_prob,
+    endless_loader,
+    evaluate_comprehensive_perf,
+    fair_vl_group_dataset,
+    fair_vl_med_dataset,
+    set_random_seed
+)
 
 
 def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
