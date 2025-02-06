@@ -42,14 +42,11 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 @torch.no_grad()
-def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, normalize: bool = False, standardize: bool = False) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
+def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, standardize: bool = False) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
     model.eval()
 
     correlations = []
     correlation_group_indices = {}
-
-    if standardize and normalize:
-        raise ValueError("Normalize and Standardize cannot be used at the same time.")
 
     for batch in data_loader:
         images, texts, label_and_attributes = batch
@@ -82,14 +79,10 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
 
     for key, values in correlation_group_indices.items():
         conv_values = torch.FloatTensor(values)
-        if normalize:
-            conv_values /= sum(conv_values)
+
         if standardize:
             conv_values = (conv_values - torch.mean(conv_values)) / torch.std(conv_values)
         converted_correlation_group_indices[key] = conv_values
-
-    if normalize:
-        correlations = correlations / sum(correlations)
 
     if standardize:
         correlations = (correlations - torch.mean(correlations)) / torch.std(correlations)
