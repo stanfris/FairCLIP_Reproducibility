@@ -98,7 +98,7 @@ class FairCLIPPlusLoss(nn.Module):
 
         # Compute fairness-related loss per attribute
         if self.fairness_weight == 0:
-            return loss
+            return base_loss
 
         distance_loss = 0
 
