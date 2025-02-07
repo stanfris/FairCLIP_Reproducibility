@@ -112,7 +112,7 @@ class FairCLIPPlusLoss(nn.Module):
                                                      group_scaled_similarities[:, None])
             distance_loss += attribute_loss * attr_weight
 
-        loss = loss + self.fairness_weight * distance_loss
+        loss = base_loss + self.fairness_weight * distance_loss
 
         return loss, base_loss.detach().item(), distance_loss.detach().item()
 
