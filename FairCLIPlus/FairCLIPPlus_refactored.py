@@ -293,6 +293,7 @@ def train(
 
         if wandb_logger is not None:
             wandb_data = {
+                "loss": eval_avg_loss,
                 "acc": overall_acc,
                 "es_acc": eval_es_acc,
                 "auc": overall_auc,
