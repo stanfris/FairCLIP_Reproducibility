@@ -21,7 +21,6 @@ from geomloss import SamplesLoss
 
 from src import logger
 from src.modules import (
-    count_number_of_groups,
     compute_vl_prob,
     endless_loader,
     evaluate_comprehensive_perf,
@@ -29,6 +28,8 @@ from src.modules import (
     fair_vl_med_dataset,
     set_random_seed
 )
+
+from wandb_logger import WandbLogger
 
 
 def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -75,6 +76,8 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--summarized_note_file', default='', type=str)
     parser.add_argument('--text_source', default='note',
                         type=str, help='options: note | label')
+    parser.add_argument('--project', type=str)
+    parser.add_argument('--expname', type=str)
     parser.add_argument('--perf_file', default='', type=str)
 
     return parser
@@ -91,7 +94,7 @@ class FairCLIPPlusLoss(nn.Module):
         self.distance_loss = distance_loss
 
     def forward(self, logits_per_image, logits_per_text, features_per_attribute, correlations_with_batch, ground_truth):
-        loss = (self.loss_img(logits_per_image, ground_truth) + self.loss_txt(logits_per_text, ground_truth)) / 2
+        base_loss = (self.loss_img(logits_per_image, ground_truth) + self.loss_txt(logits_per_text, ground_truth)) / 2
 
         # Compute fairness-related loss per attribute
         if self.fairness_weight == 0:
@@ -111,7 +114,7 @@ class FairCLIPPlusLoss(nn.Module):
 
         loss = loss + self.fairness_weight * distance_loss
 
-        return loss
+        return loss, base_loss.detach().item(), distance_loss.detach().item()
 
 
 
@@ -121,16 +124,15 @@ def train_step(
         loss_fn: FairCLIPPlusLoss,
         train_dataset: DataLoader,
         attribute_group_dataset: DataLoader,
-        device: torch.device
+        device: torch.device,
+        wandb_logger: WandbLogger = None
         ):
-    model.train()
-
-    # sanity check
-    if not model.training:
-        raise Exception("Internal CLIP model still in evaluation mode")
-
     # train loop
     avg_train_loss = 0
+    avg_train_clip_loss = 0
+    avg_train_distance = 0
+
+
     for batch in train_dataset:
         images, texts, _ = batch
         images = images.to(device)
@@ -164,14 +166,27 @@ def train_step(
 
 
         ground_truth = torch.arange(len(logits_per_image), dtype=torch.long, device=device)
-        loss = loss_fn(logits_per_image, logits_per_text, logits_per_attr, correlations_with_batch, ground_truth)
-
-        avg_train_loss += loss.detach().item()
+        loss, clip_loss, distance_loss_val = loss_fn(logits_per_image, logits_per_text, logits_per_attr, correlations_with_batch, ground_truth)
 
         loss.backward()
         optimizer.step()
 
+        avg_train_loss += loss.detach().item()
+        avg_train_clip_loss += clip_loss
+        avg_train_distance += distance_loss_val
+
+
     avg_train_loss /= len(train_dataset)
+    avg_train_clip_loss /= len(train_dataset)
+    avg_train_distance /= len(train_dataset)
+
+
+    if wandb_logger is not None:
+        wandb_logger.collect_metrics({
+            "train/loss": avg_train_loss,
+            "train/CLIP_loss": avg_train_clip_loss,
+            "train/distance": avg_train_distance
+        })
 
     return model, avg_train_loss
 
@@ -182,10 +197,6 @@ def evaluate(
     eval_dataset: DataLoader,
     device: torch.device
 ):
-    # Sanity check:
-    if model.training:
-        raise Exception("Internal CLIP model still in training mode")
-
     # Keep track of all evaluation methods
     all_probs = []
     all_labels = []
@@ -252,7 +263,8 @@ def train(
     attribute_group_dataset: DataLoader,
     device: torch.device,
     logger,
-    result_dir: str
+    result_dir: str,
+    wandb_logger: WandbLogger = None
 ):
     best_epoch = 0
     best_loss = 1000000
@@ -269,7 +281,7 @@ def train(
 
     for epoch in range(epochs):
         model.train()
-        model, avg_train_loss = train_step(model, optimizer, loss_fn, train_dataset, attribute_group_dataset, device)
+        model, avg_train_loss = train_step(model, optimizer, loss_fn, train_dataset, attribute_group_dataset, device, wandb_logger)
 
         model.eval()
         eval_avg_loss, eval_results, all_probs, all_labels, all_attrs = evaluate(model, eval_dataset, device)
@@ -277,6 +289,36 @@ def train(
         overall_acc, eval_es_acc, overall_auc, eval_es_auc, \
             eval_aucs_by_attrs, eval_dpds, eval_eods, \
                 between_group_disparity = eval_results
+
+
+        if wandb_logger is not None:
+            wandb_data = {
+                "acc": overall_acc,
+                "es_acc": eval_es_acc,
+                "auc": overall_auc,
+                "es_auc": eval_es_auc,
+            }
+
+
+            for ii in range(len(eval_es_acc)):
+                wandb_data[f'eval_es_acc_attr{ii}'] = eval_es_acc[ii]
+
+            for ii in range(len(eval_aucs_by_attrs)):
+                for iii in range(len(eval_aucs_by_attrs[ii])):
+                    wandb_data[f'eval_auc_attr{ii}_group{iii}'] = eval_aucs_by_attrs[ii][iii]
+
+            for ii in range(len(between_group_disparity)):
+                wandb_data[f'eval_auc_attr{ii}_std_group_disparity'] = between_group_disparity[ii][0]
+                wandb_data[f'eval_auc_attr{ii}_max_group_disparity'] = between_group_disparity[ii][1]
+
+            for ii in range(len(eval_dpds)):
+                wandb_data[f'eval_dpd_attr{ii}'] =eval_dpds[ii]
+
+            for ii in range(len(eval_eods)):
+                wandb_data[f'eval_eod_attr{ii}'] = eval_eods[ii]
+
+            wandb_logger.collect_metrics({f"val/{key}": val for key, val in wandb_data.items()})
+            wandb_logger.upload()
 
 
         logger.log(f'===> epoch[{epoch:03d}/{epochs:03d}], training loss: {avg_train_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
@@ -464,18 +506,14 @@ if __name__ == '__main__':
             group_dataloaders[group_idx] = endless_loader(tmp_dataloader)
         all_attribute_dataloaders[attr] = group_dataloaders
 
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        train_dataset)
-    logger.log(f'group size on race in training set: {group_size_on_race}')
-    logger.log(f'group size on gender in training set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in training set: {group_size_on_ethnicity}')
-    group_size_on_race, group_size_on_gender, group_size_on_ethnicity = count_number_of_groups(
-        val_dataset)
-    logger.log(f'group size on race in validation set: {group_size_on_race}')
-    logger.log(f'group size on gender in validation set: {group_size_on_gender}')
-    logger.log(
-        f'group size on ethnicity in validation set: {group_size_on_ethnicity}')
+
+    # create wandb logger
+    if args.project is not None and args.expname is not None:
+        wandb_logger = WandbLogger(
+            experiment_name=args.project,
+            project_name=args.expname,
+            config=args
+        )
 
     # train model
     (
