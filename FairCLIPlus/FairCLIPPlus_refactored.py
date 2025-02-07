@@ -512,8 +512,8 @@ if __name__ == '__main__':
     wandb_logger = None
     if args.project is not None and args.expname is not None:
         wandb_logger = WandbLogger(
-            experiment_name=args.project,
-            project_name=args.expname,
+            experiment_name=args.expname,
+            project_name=args.project,
             config=args
         )
 
