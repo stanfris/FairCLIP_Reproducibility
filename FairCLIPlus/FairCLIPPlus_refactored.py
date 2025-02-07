@@ -508,6 +508,7 @@ if __name__ == '__main__':
 
 
     # create wandb logger
+    wandb_logger = None
     if args.project is not None and args.expname is not None:
         wandb_logger = WandbLogger(
             experiment_name=args.project,
@@ -532,7 +533,7 @@ if __name__ == '__main__':
     ) = train(
         model, optimizer, fairclip_loss,
         args.num_epochs, train_dataloader, val_dataloader,
-        all_attribute_dataloaders, device, logger, result_dir)
+        all_attribute_dataloaders, device, logger, result_dir, wandb_logger)
 
     # Log to corresponding file
     if args.perf_file != '':
