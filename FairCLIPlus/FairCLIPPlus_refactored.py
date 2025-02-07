@@ -565,3 +565,6 @@ if __name__ == '__main__':
 
     os.rename(result_dir,
               f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}')
+
+    if wandb_logger is not None:
+        wandb_logger.finish_run()
