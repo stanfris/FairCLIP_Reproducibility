@@ -38,10 +38,12 @@ FOLDER=$((BATCH_SIZE_FAIR*ACCUM_ITER))
 SINKHORN_DIAMETER=2
 SINKHORN_SCALING=0.9
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}FairerCLIP_differentsinkhorn.csv
+PROJECT=rewroteOGcodeV2
+EXPNAME=fairerCLIP
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}/differentdistance/differentsinkhorn/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}/run_anew/rewrite_their_code/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
@@ -54,4 +56,6 @@ python3 ./finetune_FairerCLIP.py \
 		--accum_iter ${ACCUM_ITER} \
 		--sinkhorn_scaling ${SINKHORN_SCALING} \
 		--sinkhorn_diameter ${SINKHORN_DIAMETER} \
-		--seed ${SEED}
+		--seed ${SEED} \
+		--project ${PROJECT} \
+		--expname ${EXPNAME}
