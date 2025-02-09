@@ -111,7 +111,8 @@ if __name__ == '__main__':
     if args.project is not None:
         wandb_logger = WandbLogger(
             project_name=args.project,
-            config=args
+            config=args,
+            entity="FACT2025"
         )
         logger.log("Wandb created")
 
