@@ -70,8 +70,8 @@ parser.add_argument(
 def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist, standardize=False):
     total_sinkhorn_loss = 0
 
-    similarity = (logits_per_image @ logits_per_text.T)
-    correlations_with_batch = similarity.diag().float()
+    # similarity = (logits_per_image @ logits_per_text.T)
+    correlations_with_batch = logits_per_image.diag().float()
     # correlations_with_batch /= correlations_with_batch.sum()
     # correlations_groups = []
     # correlations_with_batch = logits_per_image.diag().float()
@@ -91,8 +91,8 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             with torch.no_grad():
                 img_feats, text_feats = model(images_dist, texts_dist)
 
-            group_sim = (img_feats @ text_feats.t)
-            correlations_with_group = group_sim.diag().float()
+            # group_sim = (img_feats @ text_feats.t)
+            correlations_with_group = img_feats.diag().float()
             # correlations_with_group = img_feats.diag().float()
             if standardize:
                 correlations_with_group = (correlations_with_group - torch.mean(correlations_with_group))/torch.std(correlations_with_group)
@@ -102,7 +102,7 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
             total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
         total_sinkhorn_loss += weightslist[attributeid]*total_loss
-    return total_sinkhorn_loss/total_groups
+    return total_sinkhorn_loss
 
 
 if __name__ == '__main__':
