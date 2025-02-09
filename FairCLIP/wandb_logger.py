@@ -11,12 +11,12 @@ def namespace_to_dict(namespace: argparse.Namespace):
 
 
 class WandbLogger():
-    def __init__(self, experiment_name: str, project_name: str, config: argparse.Namespace):
+    def __init__(self, project_name: str, entity: str, config: argparse.Namespace):
         """ Initializes wandb logger and creates project """
         wandb.init(
             project=project_name,
-            name=f"experiment_{experiment_name}",
-            config=namespace_to_dict(config)
+            config=namespace_to_dict(config),
+            entity=entity
         )
         self.metrics = dict()
 
