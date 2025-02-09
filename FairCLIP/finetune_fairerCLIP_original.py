@@ -59,6 +59,7 @@ parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
 parser.add_argument('--accum_iter', default=1, type=int)
 parser.add_argument('--sinkhorn_diameter', default=None, type=float)
 parser.add_argument('--sinkhorn_scaling', default=0.9, type=float)
+parser.add_argument('--project', type=str)
 parser.add_argument(
   "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
   nargs="*",  # 0 or more values expected => creates a list
