@@ -294,15 +294,15 @@ if __name__ == '__main__':
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
 
-            total_loss /= args.accum_iter
+            # total_loss /= args.accum_iter
 
             total_loss.backward()
 
             avg_train_loss += total_loss.item()
 
-            if ((batch_idx + 1) % args.accum_iter == 0) or (batch_idx + 1 == len(train_dataloader)):
-                optimizer.step()
-                optimizer.zero_grad()
+            # if ((batch_idx + 1) % args.accum_iter == 0) or (batch_idx + 1 == len(train_dataloader)):
+            optimizer.step()
+            optimizer.zero_grad()
 
 
         avg_train_loss /= len(train_dataset)
