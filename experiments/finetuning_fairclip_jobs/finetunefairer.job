@@ -38,7 +38,7 @@ FOLDER=$((BATCH_SIZE_FAIR*ACCUM_ITER))
 SINKHORN_DIAMETER=2
 SINKHORN_SCALING=0.9
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}FairerCLIP_differentsinkhorn.csv
-PROJECT=rewroteOGcodeV2NoEval
+PROJECT=rewroteOGcodeV2NoSimYesEval
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \

@@ -67,9 +67,14 @@ parser.add_argument(
   default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
 )
 
-def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, model, device, weightslist, standardize=False):
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist, standardize=False):
     total_sinkhorn_loss = 0
-    correlations_with_batch = logits_per_image.diag().float()
+
+    similarity = (logits_per_image @ logits_per_text.T)
+    correlations_with_batch = similarity.diag().float()
+    # correlations_with_batch /= correlations_with_batch.sum()
+    # correlations_groups = []
+    # correlations_with_batch = logits_per_image.diag().float()
     if standardize:
         correlations_with_batch = (correlations_with_batch - torch.mean(correlations_with_batch))/torch.std(correlations_with_batch)
     # correlations_with_batch /= correlations_with_batch.sum()
@@ -84,9 +89,11 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, model, d
             images_dist = images_dist.to(device)
             texts_dist = texts_dist.to(device)
             with torch.no_grad():
-                img_feats, _ = model(images_dist, texts_dist)
+                img_feats, text_feats = model(images_dist, texts_dist)
 
-            correlations_with_group = img_feats.diag().float()
+            group_sim = (img_feats @ text_feats.t)
+            correlations_with_group = group_sim.diag().float()
+            # correlations_with_group = img_feats.diag().float()
             if standardize:
                 correlations_with_group = (correlations_with_group - torch.mean(correlations_with_group))/torch.std(correlations_with_group)
             # correlations_with_group /= correlations_with_group.sum()
@@ -258,7 +265,7 @@ if __name__ == '__main__':
         avg_train_loss = 0
         avg_train_clip_loss = 0
         avg_train_distance = 0
-        # model.train()
+        model.train()
         for batch_idx, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
 
@@ -277,7 +284,12 @@ if __name__ == '__main__':
 
             avg_train_clip_loss += total_loss
 
-            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, model, device, args.weightslist)
+            # similarity = (logits_per_image @ logits_per_text.T)
+            # correlations_with_batch = similarity.diag().float()
+            # correlations_with_batch /= correlations_with_batch.sum()
+            # correlations_groups = []
+
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
             avg_train_distance += total_sinkhorn_loss
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
@@ -310,7 +322,7 @@ if __name__ == '__main__':
         all_probs = []
         all_labels = []
         all_attrs = []
-        # model.eval()
+        model.eval()
         for batch in val_dataloader:
             images, texts, label_and_attributes = batch
 
