@@ -1,0 +1,59 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=9
+#SBATCH --gpus=1
+#SBATCH --job-name=racegenderFairerCLIP
+#SBATCH --ntasks=1
+#SBATCH --time=01:00:00
+#SBATCH --mem=32000M
+#SBATCH --output=FairerdiffsinkhornCLIP_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+# Run your code
+
+cd ../../FairCLIP
+
+DATASET_DIR=../data/Harvard-FairVLMed
+# DATASET_DIR=/PATH-TO_DATASET/FairVLMed
+RESULT_DIR=../results/
+MODEL_ARCH=vit-l14 # Options: vit-b16 | vit-l14
+NUM_EPOCH=10
+MODALITY_TYPE='slo_fundus'
+ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
+SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
+LR=1e-5
+SEED=5613
+BATCH_SIZE=32
+LAMBDA=1e-3
+BATCH_SIZE_FAIR=32
+ACCUM_ITER=1
+FOLDER=$((BATCH_SIZE_FAIR*ACCUM_ITER))
+# SINKHORN_DIAMETER=2
+SINKHORN_SCALING=0.9
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}FairerCLIP_differentsinkhorn.csv
+PROJECT=rewroteOGcodeV2beforedeadline
+
+
+python3 ./finetune_fairerCLIP_original.py \
+		--dataset_dir ${DATASET_DIR} \
+		--result_dir ${RESULT_DIR}/run_anew/rewrite_their_code/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--lr ${LR} \
+		--batch_size ${BATCH_SIZE} \
+		--perf_file ${PERF_FILE} \
+		--model_arch ${MODEL_ARCH} \
+		--attribute ${ATTRIBUTE_TYPE} \
+		--batchsize_fairloss ${BATCH_SIZE_FAIR} \
+		--lambda_fairloss ${LAMBDA} \
+		--summarized_note_file ${SUMMARIZED_NOTE_FILE} \
+		--weightslist 0.5 0.5 0.0 0.0 \
+		--accum_iter ${ACCUM_ITER} \
+		--sinkhorn_scaling ${SINKHORN_SCALING} \
+		--seed ${SEED} \
+		--project ${PROJECT}
