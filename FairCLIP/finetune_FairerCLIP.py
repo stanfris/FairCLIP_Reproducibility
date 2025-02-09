@@ -115,6 +115,11 @@ if __name__ == '__main__':
             project_name=args.project,
             config=args
         )
+        logger.log("Wandb created")
+
+    if wandb_logger == None:
+        logger.log("No wandb created")
+
 
     result_dir = args.result_dir + f"{args.seed}"
 
