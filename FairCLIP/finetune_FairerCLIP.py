@@ -89,11 +89,9 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             images_dist = images_dist.to(device)
             texts_dist = texts_dist.to(device)
             with torch.no_grad():
-                img_feats, text_feats = model(images_dist, texts_dist)
+                img_feats, _ = model(images_dist, texts_dist)
 
-            # group_sim = (img_feats @ text_feats.t)
             correlations_with_group = img_feats.diag().float()
-            # correlations_with_group = img_feats.diag().float()
             if standardize:
                 correlations_with_group = (correlations_with_group - torch.mean(correlations_with_group))/torch.std(correlations_with_group)
             # correlations_with_group /= correlations_with_group.sum()
@@ -284,11 +282,6 @@ if __name__ == '__main__':
 
             avg_train_clip_loss += total_loss
 
-            # similarity = (logits_per_image @ logits_per_text.T)
-            # correlations_with_batch = similarity.diag().float()
-            # correlations_with_batch /= correlations_with_batch.sum()
-            # correlations_groups = []
-
             total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
             avg_train_distance += total_sinkhorn_loss
 
@@ -334,11 +327,11 @@ if __name__ == '__main__':
             class_text_feats = []
             with torch.no_grad():
                 image_features = model.encode_image(images)
-                image_features /= image_features.norm(dim=1, keepdim=True)
+                # image_features /= image_features.norm(dim=1, keepdim=True)
 
                 for i in range(texts.shape[1]):
                     text_features = model.encode_text(texts[:, i, :])
-                    text_features /= text_features.norm(dim=1, keepdim=True)
+                    # text_features /= text_features.norm(dim=1, keepdim=True)
                     class_text_feats.append(text_features[:, None, :])
                 # concatentate class_text_feats along the second dimension
                 class_text_feats = torch.cat(class_text_feats, dim=1)
