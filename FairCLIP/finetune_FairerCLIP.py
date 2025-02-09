@@ -258,7 +258,7 @@ if __name__ == '__main__':
         avg_train_loss = 0
         avg_train_clip_loss = 0
         avg_train_distance = 0
-        model.train()
+        # model.train()
         for batch_idx, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
 
@@ -310,7 +310,7 @@ if __name__ == '__main__':
         all_probs = []
         all_labels = []
         all_attrs = []
-        model.eval()
+        # model.eval()
         for batch in val_dataloader:
             images, texts, label_and_attributes = batch
 
@@ -364,7 +364,7 @@ if __name__ == '__main__':
             }
 
         for ii in range(len(eval_es_acc)):
-                wandb_data[f'eval_es_acc_attr{ii}'] = eval_es_acc[ii]
+            wandb_data[f'eval_es_acc_attr{ii}'] = eval_es_acc[ii]
 
         for ii in range(len(eval_aucs_by_attrs)):
             for iii in range(len(eval_aucs_by_attrs[ii])):
