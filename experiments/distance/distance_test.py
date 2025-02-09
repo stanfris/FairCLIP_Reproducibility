@@ -42,7 +42,7 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 @torch.no_grad()
-def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, standardize: bool = False) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
+def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str, standardize: bool = False, normalize: bool = False) -> Tuple[torch.FloatTensor, Dict[Tuple[int, int], torch.FloatTensor]]:
     model.eval()
 
     correlations = []
@@ -54,13 +54,14 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
         texts = texts.to(device)
 
         image_features = model.encode_image(images)
-        image_features /= image_features.norm(dim=1, keepdim=True)
+        if normalize:
+            image_features /= image_features.norm(dim=1, keepdim=True)
 
-        text_features = model.encode_text(texts)
-        text_features /= text_features.norm(dim=1, keepdim=True)
+        # text_features = model.encode_text(texts)
+        # text_features /= text_features.norm(dim=1, keepdim=True)
 
-        similarity = image_features @ text_features.T
-        similarity = similarity.diag().float().tolist()
+        # similarity = image_features @ text_features.T
+        similarity = image_features.diag().float().tolist()
         correlations += similarity
         attributes = label_and_attributes[:, 1:].tolist()
 

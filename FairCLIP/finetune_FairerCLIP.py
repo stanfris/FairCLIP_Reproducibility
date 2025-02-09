@@ -19,6 +19,8 @@ from torch import optim
 import torch.nn.functional as F
 import warnings
 
+from wandb_logger import WandbLogger
+
 import sys
 sys.path.append('.')
 
@@ -57,6 +59,8 @@ parser.add_argument('--sinkhorn_blur', default=1e-4, type=float)
 parser.add_argument('--accum_iter', default=1, type=int)
 parser.add_argument('--sinkhorn_diameter', default=None, type=float)
 parser.add_argument('--sinkhorn_scaling', default=0.9, type=float)
+parser.add_argument('--project', type=str)
+parser.add_argument('--expname', type=str)
 parser.add_argument(
   "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
   nargs="*",  # 0 or more values expected => creates a list
@@ -64,10 +68,9 @@ parser.add_argument(
   default=[0.25, 0.25, 0.25, 0.25],  # default if nothing is provided
 )
 
-def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_per_text, model, device, weightslist, standardize=False):
+def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, model, device, weightslist, standardize=False):
     total_sinkhorn_loss = 0
-    similarity = (logits_per_image @ logits_per_text.T)
-    correlations_with_batch = similarity.diag().float()
+    correlations_with_batch = logits_per_image.diag().float()
     if standardize:
         correlations_with_batch = (correlations_with_batch - torch.mean(correlations_with_batch))/torch.std(correlations_with_batch)
     # correlations_with_batch /= correlations_with_batch.sum()
@@ -82,10 +85,9 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             images_dist = images_dist.to(device)
             texts_dist = texts_dist.to(device)
             with torch.no_grad():
-                img_feats, txt_feats = model(images_dist, texts_dist)
+                img_feats, _ = model(images_dist, texts_dist)
 
-            similarity = (img_feats @ txt_feats.T)
-            correlations_with_group = similarity.diag().float()
+            correlations_with_group = img_feats.diag().float()
             if standardize:
                 correlations_with_group = (correlations_with_group - torch.mean(correlations_with_group))/torch.std(correlations_with_group)
             # correlations_with_group /= correlations_with_group.sum()
@@ -105,6 +107,14 @@ if __name__ == '__main__':
     set_random_seed(args.seed)
 
     logger.log(f'===> random seed: {args.seed}')
+
+    wandb_logger = None
+    if args.project is not None and args.expname is not None:
+        wandb_logger = WandbLogger(
+            experiment_name=args.expname,
+            project_name=args.project,
+            config=args
+        )
 
     result_dir = args.result_dir + f"{args.seed}"
 
@@ -182,6 +192,9 @@ if __name__ == '__main__':
     all_attribute_dataloaders = []
     for attr in range(len(groups_in_attrs)):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
+        if args.weightslist[attr] == 0:
+            all_attribute_dataloaders.append([])
+            continue
         group_dataloaders = []
         for i in range(groups_in_attrs[attr]):
             tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
@@ -205,17 +218,7 @@ if __name__ == '__main__':
     logger.log(
         f'group size on ethnicity in test set: {group_size_on_ethnicity}')
 
-    def convert_models_to_fp32(model):
-        for p in model.parameters():
-            p.data = p.data.float()
-            p.grad.data = p.grad.data.float()
-
-    if device == "cpu":
-        model.float()
-    else:
-        # Actually this line is unnecessary since clip by default already on float16
-        # clip.model.convert_weights(model)
-        model.float()
+    model.float()
 
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
@@ -248,7 +251,10 @@ if __name__ == '__main__':
     best_between_group_disparity = None
 
     for epoch in range(args.num_epochs):
-        avg_loss = 0
+        avg_train_loss = 0
+        avg_train_clip_loss = 0
+        avg_train_distance = 0
+        model.train()
         for batch_idx, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
 
@@ -265,7 +271,10 @@ if __name__ == '__main__':
             total_loss = (loss_img(logits_per_image, ground_truth) +
                           loss_txt(logits_per_text, ground_truth))/2
 
-            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, logits_per_text, model, device, args.weightslist)
+            avg_train_clip_loss += total_loss
+
+            total_sinkhorn_loss = loss_fairer_CLIP(all_attribute_dataloaders, loss_for_FairCLIP, logits_per_image, model, device, args.weightslist)
+            avg_train_distance += total_sinkhorn_loss
 
             total_loss += args.lambda_fairloss * total_sinkhorn_loss
 
@@ -273,20 +282,31 @@ if __name__ == '__main__':
 
             total_loss.backward()
 
-            avg_loss += total_loss.item()
-            
+            avg_train_loss += total_loss.item()
+
             if ((batch_idx + 1) % args.accum_iter == 0) or (batch_idx + 1 == len(train_dataloader)):
                 optimizer.step()
                 optimizer.zero_grad()
 
 
-        avg_loss /= len(train_dataloader)
+        avg_train_loss /= len(train_dataset)
+        avg_train_clip_loss /= len(train_dataset)
+        avg_train_distance /= len(train_dataset)
+
+
+        if wandb_logger is not None:
+            wandb_logger.collect_metrics({
+                "train/loss": avg_train_loss,
+                "train/CLIP_loss": avg_train_clip_loss,
+                "train/distance": avg_train_distance
+            })
 
         # iterate over test dataset
         eval_avg_loss = 0
         all_probs = []
         all_labels = []
         all_attrs = []
+        model.eval()
         for batch in val_dataloader:
             images, texts, label_and_attributes = batch
 
@@ -329,6 +349,35 @@ if __name__ == '__main__':
 
         overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
             all_probs, all_labels, all_attrs.T)
+
+        if wandb_logger is not None:
+            wandb_data = {
+                "loss": eval_avg_loss,
+                "acc": overall_acc,
+                "es_acc": eval_es_acc,
+                "auc": overall_auc,
+                "es_auc": eval_es_auc,
+            }
+
+        for ii in range(len(eval_es_acc)):
+                wandb_data[f'eval_es_acc_attr{ii}'] = eval_es_acc[ii]
+
+        for ii in range(len(eval_aucs_by_attrs)):
+            for iii in range(len(eval_aucs_by_attrs[ii])):
+                wandb_data[f'eval_auc_attr{ii}_group{iii}'] = eval_aucs_by_attrs[ii][iii]
+
+        for ii in range(len(between_group_disparity)):
+            wandb_data[f'eval_auc_attr{ii}_std_group_disparity'] = between_group_disparity[ii][0]
+            wandb_data[f'eval_auc_attr{ii}_max_group_disparity'] = between_group_disparity[ii][1]
+
+        for ii in range(len(eval_dpds)):
+            wandb_data[f'eval_dpd_attr{ii}'] =eval_dpds[ii]
+
+        for ii in range(len(eval_eods)):
+            wandb_data[f'eval_eod_attr{ii}'] = eval_eods[ii]
+
+        wandb_logger.collect_metrics({f"val/{key}": val for key, val in wandb_data.items()})
+        wandb_logger.upload()
 
         if best_auc <= overall_auc:
             best_auc = overall_auc
@@ -415,3 +464,6 @@ if __name__ == '__main__':
 
     os.rename(result_dir,
               f'{result_dir}_seed{args.seed}_auc{best_auc:.4f}')
+
+    if wandb_logger is not None:
+        wandb_logger.finish_run()
