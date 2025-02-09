@@ -39,7 +39,6 @@ SINKHORN_DIAMETER=2
 SINKHORN_SCALING=0.9
 PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${LAMBDA}FairerCLIP_differentsinkhorn.csv
 PROJECT=rewroteOGcodeV2
-EXPNAME=fairerCLIP
 
 python3 ./finetune_FairerCLIP.py \
 		--dataset_dir ${DATASET_DIR} \
@@ -57,5 +56,4 @@ python3 ./finetune_FairerCLIP.py \
 		--sinkhorn_scaling ${SINKHORN_SCALING} \
 		--sinkhorn_diameter ${SINKHORN_DIAMETER} \
 		--seed ${SEED} \
-		--project ${PROJECT} \
-		--expname ${EXPNAME}
+		--project ${PROJECT}

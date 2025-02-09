@@ -60,7 +60,6 @@ parser.add_argument('--accum_iter', default=1, type=int)
 parser.add_argument('--sinkhorn_diameter', default=None, type=float)
 parser.add_argument('--sinkhorn_scaling', default=0.9, type=float)
 parser.add_argument('--project', type=str)
-parser.add_argument('--expname', type=str)
 parser.add_argument(
   "--weightslist",  # name on the CLI - drop the `--` for positional/required parameters
   nargs="*",  # 0 or more values expected => creates a list
@@ -109,9 +108,8 @@ if __name__ == '__main__':
     logger.log(f'===> random seed: {args.seed}')
 
     wandb_logger = None
-    if args.project is not None and args.expname is not None:
+    if args.project is not None:
         wandb_logger = WandbLogger(
-            experiment_name=args.expname,
             project_name=args.project,
             config=args
         )
@@ -350,7 +348,7 @@ if __name__ == '__main__':
         eval_avg_loss /= len(test_dataloader)
 
         logger.log(
-            f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
+            f'===> epoch[{epoch:03d}/{args.num_epochs:03d}], training loss: {avg_train_loss:.4f}, eval loss: {eval_avg_loss:.4f}')
 
         overall_acc, eval_es_acc, overall_auc, eval_es_auc, eval_aucs_by_attrs, eval_dpds, eval_eods, between_group_disparity = evaluate_comprehensive_perf(
             all_probs, all_labels, all_attrs.T)
@@ -412,7 +410,7 @@ if __name__ == '__main__':
         logger.log(best_auc_groups)
 
         logger.logkv('epoch', epoch)
-        logger.logkv('trn_loss', round(avg_loss, 4))
+        logger.logkv('trn_loss', round(avg_train_loss, 4))
 
         logger.logkv('eval_loss', round(eval_avg_loss, 4))
         logger.logkv('eval_acc', round(overall_acc, 4))
