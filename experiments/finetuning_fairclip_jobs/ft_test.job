@@ -49,5 +49,4 @@ srun python3 ./FairCLIPPlus_refactored.py \
 		--weightslist 1. 0.0 0.0 0.0 \
 		--attributeslist race gender ethnicity language \
 		--groups_per_attr 3 2 2 3 \
-        --project debug_fact \
-        --expname testr
+        --project debug_fact

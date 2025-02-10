@@ -77,7 +77,6 @@ def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--text_source', default='note',
                         type=str, help='options: note | label')
     parser.add_argument('--project', type=str)
-    parser.add_argument('--expname', type=str)
     parser.add_argument('--perf_file', default='', type=str)
 
     return parser
@@ -497,6 +496,10 @@ if __name__ == '__main__':
     all_attribute_dataloaders = dict()
     for attr_index, attr in enumerate(args.attributeslist):
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
+        if args.weightslist[attr_index] == 0:
+            all_attribute_dataloaders[attr] = dict()
+            continue
+
         group_dataloaders = dict()
         for group_idx in range(args.groups_per_attr[attr_index]):
             tmp_dataset = fair_vl_group_dataset(args.dataset_dir, preprocess,
@@ -510,10 +513,10 @@ if __name__ == '__main__':
 
     # create wandb logger
     wandb_logger = None
-    if args.project is not None and args.expname is not None:
+    if args.project is not None:
         wandb_logger = WandbLogger(
-            experiment_name=args.expname,
             project_name=args.project,
+            entity="FACT2025",
             config=args
         )
 
