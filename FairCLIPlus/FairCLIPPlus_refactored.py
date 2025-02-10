@@ -498,6 +498,7 @@ if __name__ == '__main__':
         # get different dataloaders for each group inside an attribute (for example: male, female; or: English, Spanish)
         if args.weightslist[attr_index] == 0:
             all_attribute_dataloaders[attr] = dict()
+            logger.log(f"Skipping collecting data for attribute: {attr}")
             continue
 
         group_dataloaders = dict()
