@@ -1,13 +1,8 @@
 import sys
-import os
-import random
 import argparse
 import optuna
 
-import json
-
 import numpy as np
-import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -20,7 +15,6 @@ import clip
 
 from geomloss import SamplesLoss
 
-from src import logger
 from src.modules import (
     compute_vl_prob,
     endless_loader,
@@ -29,8 +23,6 @@ from src.modules import (
     fair_vl_med_dataset,
     set_random_seed
 )
-
-from wandb_logger import WandbLogger
 
 
 def init_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -305,7 +297,7 @@ def objective(trial):
     # Initializing losses
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
-    distance_loss = SamplesLoss(loss="sinkhorn", p=2, blur=args.sinkhorn_blur, scaling=0.95)
+    distance_loss = SamplesLoss(loss="gaussian", p=2, blur=args.sinkhorn_blur, scaling=0.95) # Change to sinkhorn for sinkhorn distance
     fairclip_loss = FairCLIPPlusLoss(
         loss_img=loss_img,
         loss_txt=loss_txt,
@@ -318,12 +310,12 @@ def objective(trial):
     train_dataset = fair_vl_med_dataset(args.dataset_dir, preprocess, subset='Training',
                                         text_source=args.text_source, summarized_note_file=args.summarized_note_file)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                  num_workers=args.workers, pin_memory=True, drop_last=False)
+                                  num_workers=args.workers, pin_memory=True, drop_last=True) # drop_last = False for sinkhorn
 
     val_dataset = fair_vl_med_dataset(
         args.dataset_dir, preprocess, subset='Validation')
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                                num_workers=args.workers, pin_memory=True, drop_last=False)
+                                num_workers=args.workers, pin_memory=True, drop_last=True) # drop_last = False for sinkhorn
 
     all_attribute_dataloaders = dict()
     for attr_index, attr in enumerate(args.attributeslist):
@@ -338,7 +330,7 @@ def objective(trial):
                                                 text_source='note', summarized_note_file=args.summarized_note_file,
                                                 attribute=attr, thegroup=group_idx)
             tmp_dataloader = DataLoader(tmp_dataset, batch_size=args.batchsize_fairloss, shuffle=True,
-                                        num_workers=args.workers, pin_memory=True, drop_last=False)
+                                        num_workers=args.workers, pin_memory=True, drop_last=True) # drop_last = False for sinkhorn
             group_dataloaders[group_idx] = endless_loader(tmp_dataloader)
         all_attribute_dataloaders[attr] = group_dataloaders
 
