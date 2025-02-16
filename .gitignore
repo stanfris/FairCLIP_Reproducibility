@@ -9,11 +9,14 @@ results/
 results
 .DS_Store
 mae/tmp.out--blip_feats_select
-
+FairCLIPlus/wandb/
+./FairCLIPlus/wandb/
+FairCLIPlus/wandb/*
+./FairCLIPlus/wandb/*
 *.swp
-
+*wandb*
 # From their repo:
-
+FairCLIPlus/wandb/
 FUNDUS_Dataset
 LAVIS/lavis/PRETRAIN_EXPS
 
