@@ -52,17 +52,10 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
         images, texts, label_and_attributes = batch
         images = images.to(device)
         texts = texts.to(device)
+    
+        values = model(images, texts)
 
-        image_features = model.encode_image(images)
-        if normalize:
-            image_features /= image_features.norm(dim=1, keepdim=True)
-
-        text_features = model.encode_text(texts)
-        if normalize:
-            text_features /= text_features.norm(dim=1, keepdim=True)
-
-        similarity = image_features @ text_features.T
-        # similarity = image_features.diag().float().tolist()
+        similarity = values.diag().float().tolist()
         correlations += similarity
         attributes = label_and_attributes[:, 1:].tolist()
 
@@ -120,7 +113,7 @@ if __name__ == "__main__":
         model_checkpoint = torch.load(args.checkpoint)
         model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    distance_fn = SamplesLoss(loss="sinkhorn", p=2, blur=1e-4, diameter=2, scaling=0.95)
+    distance_fn = SamplesLoss(loss="laplacian", p=2, scaling=0.95)
     # changed blur to 0.1 due to the documentation
     # distance_fn = SamplesLoss(loss="gaussian", p=2, blur=0.1, diameter=2, scaling=0.95)
 
