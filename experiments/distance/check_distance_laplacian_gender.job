@@ -18,7 +18,7 @@ module load Anaconda3/2023.07-2
 source activate fairclip
 
 DATASET_DIR=../../data/Harvard-FairVLMed
-MODEL_ARCH=vit-l14 # Options: vit-b16 | vit-l14
+MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
 CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-064141_seed4141_auc0.6518/best_model.pth
