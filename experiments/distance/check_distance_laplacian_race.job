@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=2
+#SBATCH --gpus=1
+#SBATCH --job-name=eval_distance
+#SBATCH --ntasks=1
+#SBATCH --time=00:05:00
+#SBATCH --mem=32000M
+#SBATCH --output=eval_dist_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+
+DATASET_DIR=../../data/Harvard-FairVLMed
+MODEL_ARCH=vit-l14 # Options: vit-b16 | vit-l14
+BATCH_SIZE=32
+SEED=42
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-067004_seed7004_auc0.6758/best_model.pth
+RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/race/
+OUT=distances_laplacian.pickle
+
+srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
+
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-067608_seed7608_auc0.7006/best_model.pth
+RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/race/
+
+srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
+
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-06230_seed230_auc0.6349/best_model.pth
+RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/race/
+
+srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
