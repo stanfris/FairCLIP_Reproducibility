@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=04:00:00
 #SBATCH --mem=32000M
-#SBATCH --output=gender_hpo_distance_%A.out
+#SBATCH --output=gender_hpo_distance_laplacian_%A.out
 
 module purge
 module load 2023
@@ -29,15 +29,15 @@ NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
-LR=5.2e-6
+LR=5.2e-05
 BATCH_SIZE=32
 LAMBDA=0.5
 BATCH_SIZE_FAIR=32
-PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
+PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP_laplacian_gender.csv
 
-srun python3 ./FairCLIPPlus_refactored.py \
+srun python3 ./FairCLIPPlus_refactored_mmd_laplacian.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}run_anew/FairerCLIP/glaucoma_FairerCLIP_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}run_anew/laplacian/fairCLIP/gender/glaucoma_FairerCLIP_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
