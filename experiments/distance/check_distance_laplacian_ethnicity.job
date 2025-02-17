@@ -21,18 +21,18 @@ DATASET_DIR=../../data/Harvard-FairVLMed
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
-CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-067053_seed7053_auc0.6497/best_model.pth
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_500_3.95e-077115_seed7115_auc0.5097/best_model.pth
 RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/ethnicity/
 OUT=distances_laplacian.pickle
 
 srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-067390_seed7390_auc0.5900/best_model.pth
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_500_3.95e-078985_seed8985_auc0.5333/best_model.pth
 RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/ethnicity/
 
 srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_0.5_5.2e-066478_seed6478_auc0.6483/best_model.pth
+CHECKPOINT=../../results/run_anew/laplacian/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_500_3.95e-079317_seed9317_auc0.5159/best_model.pth
 RESULT_DIR=../../results/run_anew/laplacian/fairCLIP/ethnicity/
 
 srun python3 distance_test_laplacian.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
