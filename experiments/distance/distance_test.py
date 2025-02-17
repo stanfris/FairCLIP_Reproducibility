@@ -53,15 +53,10 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
         images = images.to(device)
         texts = texts.to(device)
 
-        image_features = model.encode_image(images)
-        if normalize:
-            image_features /= image_features.norm(dim=1, keepdim=True)
-
-        text_features = model.encode_text(texts)
-        if normalize:
-            text_features /= text_features.norm(dim=1, keepdim=True)
-
-        similarity = image_features @ text_features.T
+        images = images.to(device)
+        texts = texts.to(device)
+        values, _ = model(images, texts)
+        similarity = values.diag().float().tolist()
         # similarity = image_features.diag().float().tolist()
         correlations += similarity
         attributes = label_and_attributes[:, 1:].tolist()
