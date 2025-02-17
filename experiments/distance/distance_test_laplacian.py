@@ -53,7 +53,7 @@ def get_all_similarities(model: nn.Module, data_loader: DataLoader, device: str,
         images = images.to(device)
         texts = texts.to(device)
     
-        values = model(images, texts)
+        values1, _ = model(images, texts)
 
         similarity = values.diag().float().tolist()
         correlations += similarity
