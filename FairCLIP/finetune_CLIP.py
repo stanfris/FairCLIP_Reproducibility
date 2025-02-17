@@ -179,6 +179,7 @@ if __name__ == '__main__':
 
     for epoch in range(args.num_epochs):
         avg_loss = 0
+        model.train()
         for batch in train_dataloader:
             optimizer.zero_grad()
 
@@ -210,6 +211,7 @@ if __name__ == '__main__':
         all_probs = []
         all_labels = []
         all_attrs = []
+        model.eval()
         for batch in val_dataloader:
             images, texts, label_and_attributes = batch
 
