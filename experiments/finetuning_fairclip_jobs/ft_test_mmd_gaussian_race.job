@@ -37,7 +37,7 @@ PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
 
 srun python3 ./FairCLIPPlus_refactored_mmd_gauss.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}run_anew/FairerCLIP/glaucoma_FairerCLIP_MMD_Gaussian_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}run_anew/fairCLIP/gaussian/race/glaucoma_FairerCLIP_MMD_Gaussian_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
@@ -46,7 +46,7 @@ srun python3 ./FairCLIPPlus_refactored_mmd_gauss.py \
 		--batchsize_fairloss ${BATCH_SIZE_FAIR} \
 		--lambda_fairloss ${LAMBDA} \
 		--summarized_note_file ${SUMMARIZED_NOTE_FILE} \
-		--weightslist 0.5 0.5 0.0 0.0 \
+		--weightslist 1.0 0.0 0.0 0.0 \
 		--attributeslist race gender ethnicity language \
 		--groups_per_attr 3 2 2 3 \
         --project debug_fact \
