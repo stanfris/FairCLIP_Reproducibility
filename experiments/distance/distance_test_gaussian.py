@@ -113,7 +113,7 @@ if __name__ == "__main__":
         model_checkpoint = torch.load(args.checkpoint)
         model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    distance_fn = SamplesLoss(loss="laplacian", p=2, scaling=0.95, diameter=2)
+    distance_fn = SamplesLoss(loss="gaussian", p=2, scaling=0.95)
     # changed blur to 0.1 due to the documentation
     # distance_fn = SamplesLoss(loss="gaussian", p=2, blur=0.1, diameter=2, scaling=0.95)
 
