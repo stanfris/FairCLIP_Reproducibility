@@ -29,9 +29,9 @@ NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=race # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
-LR=1e-8
+LR=1.97e-06
 BATCH_SIZE=32
-LAMBDA=0.000001
+LAMBDA=200
 BATCH_SIZE_FAIR=32
 PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP.csv
 
