@@ -47,6 +47,7 @@ python3 ./evaluate_CLIP.py \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-068922_seed8922_auc0.5661/best_model.pth
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
@@ -54,5 +55,6 @@ python3 ./evaluate_CLIP.py \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-063675_seed3675_auc0.5546/best_model.pth
 

@@ -47,12 +47,14 @@ python3 ./evaluate_CLIP.py \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-06893_seed893_auc0.5404/best_model.pth
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
                 --result_dir ../results/run_anew/sinkhorn/fairCLIP/gender/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --model_arch ${MODEL_ARCH} \
                 --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-061783_seed1783_auc0.5398/best_model.pth
 

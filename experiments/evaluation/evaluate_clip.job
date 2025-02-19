@@ -46,6 +46,7 @@ python3 ./evaluate_CLIP.py \
                 --result_dir ${RESULT_DIR}/CLIP_finetuning/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --model_arch ${MODEL_ARCH} \
                 --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}4679_seed4679_auc0.7066/clip.pth
 
@@ -54,5 +55,6 @@ python3 ./evaluate_CLIP.py \
                 --result_dir ${RESULT_DIR}/CLIP_finetuning/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
+                --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --model_arch ${MODEL_ARCH} \
                 --pretrained_weights ${RESULT_DIR}/CLIP_finetuning/glaucoma_CLIP_${MODEL_ARCH}489_seed489_auc0.7146/clip.pth
