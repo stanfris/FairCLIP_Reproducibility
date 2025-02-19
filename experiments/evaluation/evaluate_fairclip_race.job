@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_a100
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=9
+#SBATCH --gpus=1
+#SBATCH --job-name=evaluation
+#SBATCH --ntasks=1
+#SBATCH --time=00:30:00
+#SBATCH --mem=32000M
+#SBATCH --output=evaluation_%A.out
+
+module purge
+module load 2023
+module load Anaconda3/2023.07-2
+
+# Activate your environment
+source activate fairclip
+
+# Run your code
+cd ../../FairCLIP
+#srun ./FairCLIP/scripts/evaluate_CLIP.sh
+DATASET_DIR=../data/Harvard-FairVLMed
+# DATASET_DIR=/PATH-TO_DATASET/FairVLMed
+RESULT_DIR=../results
+MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
+MODALITY_TYPE='slo_fundus'
+LR=1e-5
+BATCH_SIZE=32
+ATTRIBUTE_TYPE=ethnicity # Options: race | gender | ethnicity | language
+
+PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_eval.csv
+
+python3 ./evaluate_CLIP.py \
+		--dataset_dir ${DATASET_DIR} \
+		--result_dir ../../results/run_anew/sinkhorn/fairCLIP/race/ \
+		--lr ${LR} \
+		--perf_file ${PERF_FILE} \
+		--model_arch ${MODEL_ARCH} \
+		--pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-065215_seed5215_auc0.5473/best_model.pth
+
+python3 ./evaluate_CLIP.py \
+                --dataset_dir ${DATASET_DIR} \
+                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/race/ \
+                --lr ${LR} \
+                --perf_file ${PERF_FILE} \
+                --model_arch ${MODEL_ARCH} \
+                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-067628_seed7628_auc0.5542/best_model.pth
+python3 ./evaluate_CLIP.py \
+                --dataset_dir ${DATASET_DIR} \
+                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/race/ \
+                --lr ${LR} \
+                --perf_file ${PERF_FILE} \
+                --model_arch ${MODEL_ARCH} \
+                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-062545_seed2545_auc0.5357/best_model.pth
+
