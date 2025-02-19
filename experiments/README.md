@@ -1,5 +1,5 @@
 ## Experiments folder
-This folder contains the job files used to run the experiments on snellius, and has the following structure:
+This folder contains the job files used to run the experiments, and has the following structure:
 
 ```
 experiments

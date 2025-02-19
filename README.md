@@ -65,7 +65,7 @@ data
 ```
 
 ## How to Run
-Now that the environment has been correctly installed, it is time to run the code. For each of the experiments we will provide the basic scripts needed to run the code. The scripts we used to run experiments on the snellius supercomputer can be found [here](https://github.com/stanfris/FairCLIP_Reproducibility/tree/main/experiments). These scripts can easily be turned into shell scripts to allow execution on other machines (don't forget to change all paths according to your filenames and filesystem).
+Now that the environment has been correctly installed, it is time to run the code. For each of the experiments we will provide the basic scripts needed to run the code. The scripts we used to run experiments cna be found in the experiments folder. These scripts can easily be turned into shell scripts to allow execution on other machines (don't forget to change all paths according to your filenames and filesystem).
 
 ### Finetuning
 To run finetuning code, use the following script:
