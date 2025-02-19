@@ -83,7 +83,6 @@ def loss_fairer_CLIP(all_attribute_dataloaders, loss, logits_per_image, logits_p
             similarity = (img_feats @ txt_feats.T)
             correlations_with_group = similarity.diag().float()
 
-            # TODO: change lambda_fairloss such that more additions don't harm added fairness loss
             # REMARK: if correct, this means that attributes with more groups, have more added fairness loss
             total_loss = total_loss + loss(correlations_with_batch[:, None], correlations_with_group[:, None])
         total_sinkhorn_loss += weightslist[attributeid]*total_loss
