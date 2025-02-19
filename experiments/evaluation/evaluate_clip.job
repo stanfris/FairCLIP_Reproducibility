@@ -21,6 +21,7 @@ source activate fairclip
 cd ../../FairCLIP
 #srun ./FairCLIP/scripts/evaluate_CLIP.sh
 DATASET_DIR=../data/Harvard-FairVLMed
+SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results
 MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
@@ -34,6 +35,7 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_CLIP_eval.csv
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
 		--result_dir ${RESULT_DIR}/CLIP_finetuning/ \
+        --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
