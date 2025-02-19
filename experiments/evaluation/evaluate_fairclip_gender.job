@@ -34,24 +34,24 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_eval.csv
 
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ../../results/run_anew/sinkhorn/fairCLIP/gender/ \
+		--result_dir ../results/run_anew/sinkhorn/fairCLIP/gender/ \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-067911_seed7911_auc0.5906/best_model.pth
+		--pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-067911_seed7911_auc0.5906/best_model.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/gender/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/gender/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-06893_seed893_auc0.5404/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-06893_seed893_auc0.5404/best_model.pth
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/gender/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/gender/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-061783_seed1783_auc0.5398/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/gender/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-061783_seed1783_auc0.5398/best_model.pth
 

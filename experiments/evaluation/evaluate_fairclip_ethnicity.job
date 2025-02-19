@@ -34,24 +34,24 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_eval.csv
 
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
+		--result_dir ../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-068880_seed8880_auc0.5023/best_model.pth
+		--pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-068880_seed8880_auc0.5023/best_model.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-068922_seed8922_auc0.5661/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-068922_seed8922_auc0.5661/best_model.pth
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/ethnicity/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ../../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-063675_seed3675_auc0.5546/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/ethnicity/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-063675_seed3675_auc0.5546/best_model.pth
 
