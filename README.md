@@ -27,10 +27,7 @@ The code in this repository has been used to research the reproducability of the
 
 
 ## Installation Guide
-Download the repository as a ```.zip``` or clone the repository using:
-```console
-foo@bar:~$ git clone git@github.com:stanfris/FairCLIP_Reproducibility.git
-```
+Download the repository as a ```.zip``` or clone the repository.
 Install the correct version of the used packages from the .yml file using the following command:
 ```console
 foo@bar:~$ conda env create -f fairclip.yml
