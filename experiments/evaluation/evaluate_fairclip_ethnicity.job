@@ -21,6 +21,7 @@ source activate fairclip
 cd ../../FairCLIP
 #srun ./FairCLIP/scripts/evaluate_CLIP.sh
 DATASET_DIR=../data/Harvard-FairVLMed
+SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
 # DATASET_DIR=/PATH-TO_DATASET/FairVLMed
 RESULT_DIR=../results
 MODEL_ARCH=vit-b16  # Options: vit-b16 | vit-l14
