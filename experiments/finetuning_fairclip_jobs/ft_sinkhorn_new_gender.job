@@ -29,15 +29,15 @@ NUM_EPOCH=10
 MODALITY_TYPE='slo_fundus'
 ATTRIBUTE_TYPE=gender # Options: race | gender | ethnicity | language
 SUMMARIZED_NOTE_FILE=gpt-4_summarized_notes.csv
-LR=3.76e-06
+LR=1.49e-05
 BATCH_SIZE=32
-LAMBDA=3.62
+LAMBDA=0.07
 BATCH_SIZE_FAIR=32
 PERF_FILE=${MODEL_ARCH_NAME}_${MODALITY_TYPE}_${LAMBDA}_FairerCLIP_laplacian.csv
 
 srun python3 ./FairCLIPPlus_refactored.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ${RESULT_DIR}run_anew/sinkhorn/fairCLIP/large/${ATTRIBUTE_TYPE}/glaucoma_FairerCLIP_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
+		--result_dir ${RESULT_DIR}run_anew/sinkhorn/fairCLIP/small/${ATTRIBUTE_TYPE}/glaucoma_FairerCLIP_${MODEL_ARCH_NAME}_${BATCH_SIZE}_${LAMBDA}_${LR} \
 		--lr ${LR} \
 		--batch_size ${BATCH_SIZE} \
 		--perf_file ${PERF_FILE} \
