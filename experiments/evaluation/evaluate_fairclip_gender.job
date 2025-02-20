@@ -34,27 +34,27 @@ PERF_FILE=${MODEL_ARCH}_${MODALITY_TYPE}_${ATTRIBUTE_TYPE}_FairCLIP_eval.csv
 
 python3 ./evaluate_CLIP.py \
 		--dataset_dir ${DATASET_DIR} \
-		--result_dir ../results/run_anew/sinkhorn/fairCLIP/large/gender/ \
+		--result_dir ../results/run_anew/sinkhorn/fairCLIP/small/gender/ \
 		--lr ${LR} \
 		--perf_file ${PERF_FILE} \
         --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
 		--model_arch ${MODEL_ARCH} \
-		--pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/large/gender/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-068590_seed8590_auc0.5025/best_model.pth
+		--pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/small/gender/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-051496_seed1496_auc0.6979/best_model.pth
 
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../results/run_anew/sinkhorn/fairCLIP/large/gender/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/small/gender/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --model_arch ${MODEL_ARCH} \
                 --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
-                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/large/gender/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-06955_seed955_auc0.5445/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/small/gender/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-057821_seed7821_auc0.7204/best_model.pth
 python3 ./evaluate_CLIP.py \
                 --dataset_dir ${DATASET_DIR} \
-                --result_dir ../results/run_anew/sinkhorn/fairCLIP/large/gender/ \
+                --result_dir ../results/run_anew/sinkhorn/fairCLIP/small/gender/ \
                 --lr ${LR} \
                 --perf_file ${PERF_FILE} \
                 --summarized_note_file ${SUMMARIZED_NOTE_FILE} \
                 --model_arch ${MODEL_ARCH} \
-                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/large/gender/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-063738_seed3738_auc0.6634/best_model.pth
+                --pretrained_weights ../results/run_anew/sinkhorn/fairCLIP/small/gender/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-059669_seed9669_auc0.6976/best_model.pth
 
