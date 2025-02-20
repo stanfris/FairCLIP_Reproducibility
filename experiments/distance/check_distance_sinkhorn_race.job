@@ -21,18 +21,18 @@ DATASET_DIR=../../data/Harvard-FairVLMed
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-065215_seed5215_auc0.5473/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/race/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/race/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-065566_seed5566_auc0.5458/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/race/
 OUT=distances.pickle
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-067628_seed7628_auc0.5542/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/race/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/race/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-066593_seed6593_auc0.5551/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/race/
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/race/glaucoma_FairerCLIP_vit-b16_32_100_2.93e-062545_seed2545_auc0.5357/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/race/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/race/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-065297_seed5297_auc0.5378/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/race/
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
