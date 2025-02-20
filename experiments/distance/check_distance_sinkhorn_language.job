@@ -21,18 +21,18 @@ DATASET_DIR=../../data/Harvard-FairVLMed
 MODEL_ARCH=vit-b16 # Options: vit-b16 | vit-l14
 BATCH_SIZE=32
 SEED=42
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/language/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-064565_seed4565_auc0.5528/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/language/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/small/language/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-054269_seed4269_auc0.7165/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/small/language/
 OUT=distances.pickle
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/language/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-066507_seed6507_auc0.5436/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/language/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/small/language/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-055869_seed5869_auc0.6984/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/small/language/
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
 
-CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/large/language/glaucoma_FairerCLIP_vit-b16_32_3.62_3.76e-062779_seed2779_auc0.5536/best_model.pth
-RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/large/language/
+CHECKPOINT=../../results/run_anew/sinkhorn/fairCLIP/small/language/glaucoma_FairerCLIP_vit-b16_32_0.07_1.49e-059991_seed9991_auc0.7278/best_model.pth
+RESULT_DIR=../../results/run_anew/sinkhorn/fairCLIP/small/language/
 
 srun python3 distance_test.py --seed ${SEED} --batch_size ${BATCH_SIZE} --model_arch ${MODEL_ARCH} --dataset_dir ${DATASET_DIR} --checkpoint ${CHECKPOINT} --out ${OUT} --results_dir ${RESULT_DIR}
