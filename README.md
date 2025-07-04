@@ -347,3 +347,13 @@ In the original code, ```torch.backends.cudnn.deterministc``` is set to ```False
 
 # Acknowledgements
 The code in this repository is mostly based on the official code for [FairCLIP](https://github.com/Harvard-Ophthalmology-AI-Lab/FairCLIP).
+```bibtex
+@inproceedings{luo2024fairclip,
+  title={Fairclip: Harnessing fairness in vision-language learning},
+  author={Luo, Yan and Shi, Min and Khan, Muhammad Osama and Afzal, Muhammad Muneeb and Huang, Hao and Yuan, Shuaihang and Tian, Yu and Song, Luo and Kouhana, Ava and Elze, Tobias and others},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={12289--12301},
+  year={2024}
+}
+```
+
