@@ -345,7 +345,7 @@ optimizer.step()
 Finally, we found the code to incorrectly use ```torch.backends.cudnn.deterministic``` and ```torch.backends.cudnn.benchmark```.
 In the original code, ```torch.backends.cudnn.deterministc``` is set to ```False``` which makes it hard for the experiments to be exactly reproducible. ```torch.backends.cudnn.benchmark``` was set to ```True``` which we changed to ```False``` since it would otherwise overwrite ```torch.backends.cudnn.deterministic```.
 
-# Acknowledgements
+# Acknowledgements and Citation
 The code in this repository is mostly based on the official code for [FairCLIP](https://github.com/Harvard-Ophthalmology-AI-Lab/FairCLIP).
 ```bibtex
 @inproceedings{luo2024fairclip,
